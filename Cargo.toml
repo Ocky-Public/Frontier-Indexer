@@ -1,0 +1,34 @@
+[package]
+name = "indexer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = "1.47.1"
+serde = "1.0.217"
+serde_json = "1.0.138"
+anyhow = "1.0.98"
+tracing = "0.1.41"
+clap = "4.5.31"
+async-trait = "0.1.83"
+bcs = "0.1.6"
+url = "2.5.4"
+dotenvy = "0.15"
+hex = "0.4"
+bigdecimal = "0.4"
+prometheus = "0.14.0"
+
+sui-pg-db = { git = "https://github.com/MystenLabs/sui.git", branch = "testnet" }
+sui-indexer-alt-metrics = { git = "https://github.com/MystenLabs/sui.git", branch = "testnet" }
+sui-indexer-alt-framework = { git = "https://github.com/MystenLabs/sui.git", branch = "testnet" }
+sui-types = { git = "https://github.com/MystenLabs/sui.git", branch = "testnet" }
+sui-sdk-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", features = ["serde"], rev = "048124e484f14b9bf2a402227c9bc255c7621bc1" }
+sui-transaction-builder = { git = "https://github.com/mystenlabs/sui-rust-sdk", rev = "048124e484f14b9bf2a402227c9bc255c7621bc1" }
+
+telemetry-subscribers = { git = "https://github.com/MystenLabs/sui.git", branch = "testnet" }
+move-core-types = { git = "https://github.com/MystenLabs/sui.git", branch = "testnet" }
+
+chrono = { version = "0.4", features = ["serde"] }
+diesel = { version = "2.2.12", features = ["postgres", "r2d2", "chrono"] }
+diesel_migrations = "2.2.0"
+diesel-async = { version = "0.5.2", features = ["bb8", "postgres", "async-connection-wrapper"] }
