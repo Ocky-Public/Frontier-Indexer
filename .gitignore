@@ -1,0 +1,41 @@
+# IDE
+**/.history/
+**/.vscode/
+**/.idea/
+**/target/
+
+# OSX
+.DS_Store
+
+# Move build directory
+build
+
+# Node.js
+node_modules
+package-lock.json
+**/pnpm-lock.yaml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Sui replay
+.replay/
+
+# Python
+__pycache__/
+
+# Simulation data and output
+packages/predict/simulation/*.csv
+packages/predict/simulation/*.png
+
+# Research
+predict_research/
+
+# misc
+.env
+.envrc
+**/benchmark_data/
+tx-data.txt
+example.ts
+/data
+/handoff
