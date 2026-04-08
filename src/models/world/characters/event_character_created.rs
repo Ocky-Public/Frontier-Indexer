@@ -1,0 +1,50 @@
+use chrono::DateTime;
+use diesel::prelude::*;
+use serde::Deserialize;
+
+use sui_indexer_alt_framework::FieldCount;
+use sui_sdk_types::Address;
+use sui_types::event::Event;
+
+use crate::handlers::EventMeta;
+use crate::models::MoveTenantItemId;
+use crate::schema::indexer::events_character_created;
+
+#[derive(Deserialize)]
+pub struct MoveCharacterCreated {
+    pub character_id: Address,
+    pub key: MoveTenantItemId,
+    pub tribe_id: u32,
+    pub character_address: Address,
+}
+
+#[derive(Insertable, Debug, Clone, FieldCount)]
+#[diesel(table_name = events_character_created)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct StoredCharacterCreated {
+    pub occurred_at: chrono::DateTime<chrono::Utc>,
+    pub item_id: String,
+    pub tenant: String,
+    pub character_id: String,
+    pub owner_address: String,
+    pub tribe_id: i64,
+}
+
+impl StoredCharacterCreated {
+    pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
+        let move_event: MoveCharacterCreated = bcs::from_bytes(&event.contents)
+            .expect("Failed to deserialize Character Created event");
+
+        let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
+            .expect("Failed to parse checkpoint timestamp into DateTime");
+
+        Self {
+            occurred_at,
+            item_id: move_event.key.item_id.to_string(),
+            tenant: move_event.key.tenant.to_string(),
+            character_id: move_event.character_id.to_hex(),
+            owner_address: move_event.character_address.to_hex(),
+            tribe_id: move_event.tribe_id as i64,
+        }
+    }
+}

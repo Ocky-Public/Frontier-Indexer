@@ -228,10 +228,13 @@ async fn main() -> Result<(), anyhow::Error> {
     for package in &packages {
         match package {
             Package::App => {}
-            Package::World => {}
             Package::World => {
                 indexer
                     .sequential_pipeline(CharacterHandler::new(env), Default::default())
+                    .await?;
+
+                indexer
+                    .sequential_pipeline(CharacterCreatedHandler::new(env), Default::default())
                     .await?;
             }
         }
