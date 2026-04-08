@@ -37,6 +37,16 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.events_owner_cap_created (id, occurred_at) {
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 66]
+            object_id -> Varchar,
+        }
+    }
+
+    diesel::table! {
         indexer.owner_caps (id) {
             #[max_length = 66]
             id -> Varchar,
@@ -52,5 +62,10 @@ pub mod indexer {
         }
     }
 
-    diesel::allow_tables_to_appear_in_same_query!(characters, events_character_created, owner_caps);
+    diesel::allow_tables_to_appear_in_same_query!(
+        characters,
+        events_character_created,
+        events_owner_cap_created,
+        owner_caps,
+    );
 }
