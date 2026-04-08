@@ -67,6 +67,7 @@ impl EventMeta {
 // List of all handlers
 pub mod world;
 
+pub use world::access::owner_cap_handler::*;
 pub use world::characters::character_created_handler::*;
 pub use world::characters::character_handler::*;
 
