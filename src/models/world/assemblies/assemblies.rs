@@ -71,7 +71,7 @@ impl StoredAssembly {
             type_id: assembly.type_id as i64,
             owner_cap_id: assembly.owner_cap_id.to_hex(),
             location,
-            status: assembly.status.status.as_str().to_string(),
+            status: assembly.status.status.as_ref().to_string(),
             energy_source_id,
             name,
             description,
