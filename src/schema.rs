@@ -62,6 +62,29 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.events_location_revealed (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 12]
+            item_id -> Varchar,
+            #[max_length = 12]
+            tenant -> Varchar,
+            type_id -> Int8,
+            #[max_length = 66]
+            owner_cap_id -> Varchar,
+            #[max_length = 66]
+            location_hash -> Varchar,
+            solar_system_id -> Int8,
+            x -> Text,
+            y -> Text,
+            z -> Text,
+        }
+    }
+
+    diesel::table! {
         indexer.events_owner_cap_created (event_id, occurred_at) {
             #[max_length = 100]
             event_id -> Varchar,
@@ -125,6 +148,7 @@ pub mod indexer {
         assemblies,
         characters,
         events_character_created,
+        events_location_revealed,
         events_owner_cap_created,
         events_owner_cap_transferred,
         events_status_changed,
