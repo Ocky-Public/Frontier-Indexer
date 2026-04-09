@@ -5,10 +5,9 @@ pub mod indexer {
         indexer.assemblies (id) {
             #[max_length = 66]
             id -> Varchar,
-            #[max_length = 12]
+            #[max_length = 20]
             item_id -> Varchar,
-            #[max_length = 12]
-            tenant -> Varchar,
+            tenant -> Text,
             type_id -> Int8,
             #[max_length = 66]
             owner_cap_id -> Varchar,
@@ -28,10 +27,9 @@ pub mod indexer {
         indexer.characters (id) {
             #[max_length = 66]
             id -> Varchar,
-            #[max_length = 12]
+            #[max_length = 20]
             item_id -> Varchar,
-            #[max_length = 12]
-            tenant -> Varchar,
+            tenant -> Text,
             #[max_length = 66]
             owner_cap_id -> Varchar,
             #[max_length = 66]
@@ -51,10 +49,9 @@ pub mod indexer {
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
-            #[max_length = 12]
+            #[max_length = 20]
             item_id -> Varchar,
-            #[max_length = 12]
-            tenant -> Varchar,
+            tenant -> Text,
             type_id -> Int8,
             #[max_length = 66]
             owner_cap_id -> Varchar,
@@ -68,10 +65,9 @@ pub mod indexer {
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
-            #[max_length = 12]
+            #[max_length = 20]
             item_id -> Varchar,
-            #[max_length = 12]
-            tenant -> Varchar,
+            tenant -> Text,
             #[max_length = 66]
             owner_address -> Varchar,
             tribe_id -> Int8,
@@ -85,10 +81,9 @@ pub mod indexer {
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
-            #[max_length = 12]
+            #[max_length = 20]
             item_id -> Varchar,
-            #[max_length = 12]
-            tenant -> Varchar,
+            tenant -> Text,
             type_id -> Int8,
             #[max_length = 66]
             owner_cap_id -> Varchar,
@@ -136,10 +131,9 @@ pub mod indexer {
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
-            #[max_length = 12]
+            #[max_length = 20]
             item_id -> Varchar,
-            #[max_length = 12]
-            tenant -> Varchar,
+            tenant -> Text,
             status -> Text,
             action -> Text,
         }

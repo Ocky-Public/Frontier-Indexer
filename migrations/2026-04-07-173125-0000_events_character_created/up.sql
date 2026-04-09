@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS indexer.events_character_created (
   event_id            VARCHAR(100)  NOT NULL,
   occurred_at         TIMESTAMPTZ   NOT NULL,
   id                  VARCHAR(66)   NOT NULL,
-  item_id             VARCHAR(12)   NOT NULL,
-  tenant              VARCHAR(12)   NOT NULL,
+  item_id             VARCHAR(20)   NOT NULL,
+  tenant              TEXT          NOT NULL,
   owner_address       VARCHAR(66)   NOT NULL,
   tribe_id            BIGINT        NOT NULL,
   PRIMARY KEY (event_id, occurred_at)

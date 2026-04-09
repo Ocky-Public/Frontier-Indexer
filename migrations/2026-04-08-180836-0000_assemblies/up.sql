@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS indexer.assemblies (
   id                  VARCHAR(66) PRIMARY KEY,
-  item_id             VARCHAR(12) NOT NULL,
-  tenant              VARCHAR(12) NOT NULL,
+  item_id             VARCHAR(20) NOT NULL,
+  tenant              TEXT        NOT NULL,
   type_id             BIGINT      NOT NULL,
   owner_cap_id        VARCHAR(66) NOT NULL,
-  location            VARCHAR(66) NOT NULL,  
+  location            VARCHAR(66) NOT NULL,
   status              TEXT        NOT NULL,
   energy_source_id    VARCHAR(66),
   name                TEXT,
