@@ -21,7 +21,7 @@ pub struct MoveOwnerCapTransferred {
 #[diesel(table_name = events_owner_cap_transferred)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredOwnerCapTransferred {
-    pub occurred_at: chrono::DateTime<chrono::Utc>,
+    pub occurred_at: DateTime<chrono::Utc>,
     pub id: String,
     pub object_id: String,
     pub previous_owner: String,
