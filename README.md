@@ -1,6 +1,10 @@
 # Frontier-Indexer
 Custom Sui indexer for the EVE Frontier world contracts
 
+This project is still under heavy development and should not be used yet. 
+
+Building in public so those interested can follow progress and provide inputs along the way.
+
 ## Steps to add migration:
 
 1. Set the PSQL_URL:  
