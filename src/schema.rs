@@ -2,6 +2,29 @@
 
 pub mod indexer {
     diesel::table! {
+        indexer.assemblies (id) {
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 12]
+            item_id -> Varchar,
+            #[max_length = 12]
+            tenant -> Varchar,
+            type_id -> Int8,
+            #[max_length = 66]
+            location -> Varchar,
+            #[max_length = 66]
+            owner_cap_id -> Varchar,
+            status -> Text,
+            #[max_length = 66]
+            energy_source_id -> Nullable<Varchar>,
+            name -> Nullable<Text>,
+            description -> Nullable<Text>,
+            url -> Nullable<Text>,
+            checkpoint_updated -> Int8,
+        }
+    }
+
+    diesel::table! {
         indexer.characters (id) {
             #[max_length = 66]
             id -> Varchar,
@@ -77,6 +100,7 @@ pub mod indexer {
     }
 
     diesel::allow_tables_to_appear_in_same_query!(
+        assemblies,
         characters,
         events_character_created,
         events_owner_cap_created,
