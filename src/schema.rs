@@ -11,9 +11,9 @@ pub mod indexer {
             tenant -> Varchar,
             type_id -> Int8,
             #[max_length = 66]
-            location -> Varchar,
-            #[max_length = 66]
             owner_cap_id -> Varchar,
+            #[max_length = 66]
+            location -> Varchar,
             status -> Text,
             #[max_length = 66]
             energy_source_id -> Nullable<Varchar>,
@@ -45,14 +45,16 @@ pub mod indexer {
     }
 
     diesel::table! {
-        indexer.events_character_created (character_id, occurred_at) {
+        indexer.events_character_created (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
             occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
             #[max_length = 12]
             item_id -> Varchar,
             #[max_length = 12]
             tenant -> Varchar,
-            #[max_length = 66]
-            character_id -> Varchar,
             #[max_length = 66]
             owner_address -> Varchar,
             tribe_id -> Int8,
@@ -60,7 +62,9 @@ pub mod indexer {
     }
 
     diesel::table! {
-        indexer.events_owner_cap_created (id, occurred_at) {
+        indexer.events_owner_cap_created (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
@@ -70,7 +74,9 @@ pub mod indexer {
     }
 
     diesel::table! {
-        indexer.events_owner_cap_transferred (id, occurred_at) {
+        indexer.events_owner_cap_transferred (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
@@ -84,7 +90,9 @@ pub mod indexer {
     }
 
     diesel::table! {
-        indexer.events_status_changed (id, occurred_at) {
+        indexer.events_status_changed (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
