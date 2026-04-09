@@ -1,3 +1,4 @@
+pub mod event_location_revealed;
 pub mod event_status_changed;
 pub mod location;
 pub mod metadata;
