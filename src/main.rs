@@ -248,6 +248,22 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer
                     .sequential_pipeline(AssemblyCreatedHandler::new(env), Default::default())
                     .await?;
+
+                indexer
+                    .sequential_pipeline(CharacterHandler::new(env), Default::default())
+                    .await?;
+
+                indexer
+                    .sequential_pipeline(CharacterCreatedHandler::new(env), Default::default())
+                    .await?;
+
+                indexer
+                    .sequential_pipeline(LocationRevealedHandler::new(env), Default::default())
+                    .await?;
+
+                indexer
+                    .sequential_pipeline(StatusChangedHandler::new(env), Default::default())
+                    .await?;
             }
         }
     }
