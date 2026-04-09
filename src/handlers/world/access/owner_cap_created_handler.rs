@@ -13,7 +13,8 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
-use crate::handlers::{is_indexed_tx, EventMeta};
+use crate::handlers::is_indexed_tx;
+use crate::handlers::EventMeta;
 use crate::models::StoredOwnerCapCreated;
 
 use crate::AppEnv;
@@ -104,7 +105,7 @@ impl Handler for OwnerCapCreatedHandler {
 
         diesel::insert_into(events_owner_cap_created)
             .values(batch)
-            .on_conflict((id, occurred_at))
+            .on_conflict((event_id, occurred_at))
             .do_nothing()
             .execute(conn)
             .await?;
