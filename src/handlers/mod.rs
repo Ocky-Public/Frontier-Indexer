@@ -40,7 +40,7 @@ impl EventMeta {
     }
 
     pub fn event_digest(&self) -> String {
-        format!("{}{}", self.digest, self.event_index)
+        format!("{}:{}", self.digest, self.event_index)
     }
 
     pub fn digest(&self) -> String {
