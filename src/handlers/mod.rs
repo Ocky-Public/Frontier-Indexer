@@ -6,6 +6,10 @@ use sui_indexer_alt_framework::types::full_checkpoint_content::{
 use sui_types::effects::TransactionEffectsAPI;
 use sui_types::transaction::{Command, TransactionDataAPI};
 
+pub mod app;
+pub mod system;
+pub mod world;
+
 /// Captures common transaction metadata for event processing.
 pub struct EventMeta {
     digest: Arc<str>,
@@ -63,8 +67,6 @@ impl EventMeta {
         self.package.to_string()
     }
 }
-
-pub mod world;
 
 pub(crate) fn is_indexed_tx(
     tx: &ExecutedTransaction,

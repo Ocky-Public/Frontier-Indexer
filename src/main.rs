@@ -194,6 +194,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let registry = Registry::new_custom(Some("frontier_indexer".into()), None)
         .context("Failt to create Prometheus registry.")?;
+
     let metrics = MetricsService::new(MetricsArgs { metrics_address }, registry.clone());
 
     // Prepare store for the indexer

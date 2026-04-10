@@ -1,5 +1,4 @@
-//! MoveStruct trait for DeepBook indexer
-//! This module provides the MoveStruct trait for handling Move structs and event types.
+// This module provides the MoveStruct trait for handling Move structs and event types.
 
 use serde::Serialize;
 use std::str::FromStr;
