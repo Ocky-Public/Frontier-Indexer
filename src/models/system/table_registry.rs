@@ -1,17 +1,26 @@
+use serde::Deserialize;
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use sui_pg_db::Connection;
+use sui_sdk_types::Address;
+use sui_types::collection_types::Table;
 
-use crate::schema::indexer::system_table_registry;
-
-use diesel::prelude::Insertable;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
+use crate::schema::indexer::system_table_registry;
+
+#[derive(Deserialize)]
+pub struct MoveEnergyConfig {
+    pub id: Address,
+    pub assembly_energy: Table,
+}
+
 #[derive(Queryable, Insertable, Selectable, Clone, Debug)]
 #[diesel(table_name = system_table_registry)]
-pub struct TableRecord {
+pub struct StoredTableRecord {
     pub table_id: String,
     pub parent_id: String,
     pub package_id: String,
@@ -23,7 +32,7 @@ pub struct TableRecord {
 }
 
 pub struct TableRegistry {
-    cache: RwLock<HashMap<String, Arc<TableRecord>>>,
+    cache: RwLock<HashMap<String, Arc<StoredTableRecord>>>,
 }
 
 impl TableRegistry {
@@ -32,7 +41,7 @@ impl TableRegistry {
 
         // Inside your async function
         let records = system_table_registry
-            .load::<TableRecord>(conn)
+            .load::<StoredTableRecord>(conn)
             .await
             .expect("Failed to fetch records from table registry");
 
@@ -50,16 +59,16 @@ impl TableRegistry {
     pub async fn add_table(
         &self,
         conn: &mut Connection<'_>,
-        record: TableRecord,
+        record: &StoredTableRecord,
     ) -> QueryResult<()> {
         use crate::schema::indexer::system_table_registry::dsl::*;
 
         diesel::insert_into(system_table_registry)
-            .values(&record)
+            .values(record)
             .execute(conn)
             .await?;
 
-        let shared = Arc::new(record);
+        let shared = Arc::new(record.clone());
 
         self.cache
             .write()
@@ -69,9 +78,14 @@ impl TableRegistry {
         Ok(())
     }
 
-    pub fn get_record(&self, entry_owner_id: &str) -> Option<Arc<TableRecord>> {
+    pub fn get_record(&self, entry_owner_id: &str) -> Option<Arc<StoredTableRecord>> {
         let cache = self.cache.read().unwrap();
         cache.get(entry_owner_id).cloned()
+    }
+
+    pub fn contains(&self, entry_owner_id: &str) -> bool {
+        let cache = self.cache.read().unwrap();
+        cache.contains_key(entry_owner_id)
     }
 
     pub fn belongs_to_type(
