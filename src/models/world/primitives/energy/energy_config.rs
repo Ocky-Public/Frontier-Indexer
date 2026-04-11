@@ -13,11 +13,11 @@ pub struct MoveField {}
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = energy_config)]
 pub struct StoredEnergyConfig {
-    package_id: String,
-    assembly_id: String,
-    energy_cost: i64,
-    entry_object_id: String,
-    checkpoint_updated: i64,
+    pub package_id: String,
+    pub assembly_id: String,
+    pub energy_cost: i64,
+    pub entry_object_id: String,
+    pub checkpoint_updated: i64,
 }
 
 impl StoredEnergyConfig {

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use move_core_types::account_address::AccountAddress;
-
+use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -229,7 +229,7 @@ impl Handler for EnergyConfigHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::energy_config::dsl::*;
 
-        let mut to_upsert = Vec::new();
+        let mut upsert_map: HashMap<String, &StoredEnergyConfig> = HashMap::new();
         let mut to_delete = Vec::new();
 
         for action in batch {
@@ -237,14 +237,31 @@ impl Handler for EnergyConfigHandler {
                 EnergyConfigAction::Register(table) => {
                     self.ctx.tables.add_table(conn, table).await?;
                 }
-                EnergyConfigAction::Upsert(entry) => to_upsert.push(entry),
+                EnergyConfigAction::Upsert(config) => {
+                    let current = upsert_map.entry(config.assembly_id.clone());
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if config.checkpoint_updated > entry.get().checkpoint_updated {
+                                entry.insert(config);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(config);
+                        }
+                    }
+                }
                 EnergyConfigAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        if !to_upsert.is_empty() {
+        // Remove any updates for which deletions exist.
+        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+
+        let final_values: Vec<&StoredEnergyConfig> = upsert_map.into_values().collect();
+
+        if !final_values.is_empty() {
             diesel::insert_into(energy_config)
-                .values(to_upsert)
+                .values(final_values)
                 .on_conflict((assembly_id, package_id))
                 .do_update()
                 .set((
