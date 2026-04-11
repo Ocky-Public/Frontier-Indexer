@@ -1,10 +1,12 @@
+use std::sync::Arc;
 use url::Url;
 
+use crate::models::system::table_registry::TableRegistry;
+
 pub mod handlers;
-pub(crate) mod models;
+pub mod models;
 pub mod sandbox;
 pub mod schema;
-pub mod traits;
 
 pub const NOT_MAINNET_PACKAGE: &str = "<not on mainnet>";
 
@@ -201,7 +203,15 @@ impl AppEnv {
         };
         Url::parse(url).unwrap()
     }
+}
 
+#[derive(Clone)]
+pub struct AppContext {
+    pub env: AppEnv,
+    pub tables: Arc<TableRegistry>,
+}
+
+impl AppContext {
     /// Get app package addresses for this environment
     pub fn get_app_package_strings(&self) -> Vec<&str> {
         // If sandbox mode is active, both overrides are set together by init_package_override
@@ -210,7 +220,7 @@ impl AppEnv {
             return app.to_vec();
         }
 
-        let app_packages = match self {
+        let app_packages = match self.env {
             AppEnv::Mainnet => MAINNET_PACKAGES,
             AppEnv::Testnet => TESTNET_PACKAGES,
         };
@@ -226,7 +236,7 @@ impl AppEnv {
             return world.to_vec();
         }
 
-        let world_packages = match self {
+        let world_packages = match self.env {
             AppEnv::Mainnet => MAINNET_WORLD_PACKAGES,
             AppEnv::Testnet => TESTNET_WORLD_PACKAGES,
         };
@@ -244,7 +254,7 @@ impl AppEnv {
             return all;
         }
 
-        let (app_packages, world_packages) = match self {
+        let (app_packages, world_packages) = match self.env {
             AppEnv::Mainnet => (MAINNET_PACKAGES, MAINNET_WORLD_PACKAGES),
             AppEnv::Testnet => (TESTNET_PACKAGES, TESTNET_WORLD_PACKAGES),
         };

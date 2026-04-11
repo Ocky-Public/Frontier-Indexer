@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use move_core_types::account_address::AccountAddress;
-use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -21,23 +20,27 @@ use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
 use crate::handlers::is_indexed_tx;
-use crate::models::StoredCharacter;
-use crate::AppEnv;
+use crate::models::world::StoredCharacter;
+
+use crate::AppContext;
 
 pub struct CharacterHandler {
-    env: AppEnv,
+    ctx: AppContext,
     package_set: HashSet<AccountAddress>,
 }
 
 impl CharacterHandler {
-    pub fn new(env: AppEnv) -> Self {
-        let package_set: HashSet<AccountAddress> = env
+    pub fn new(ctx: &AppContext) -> Self {
+        let package_set: HashSet<AccountAddress> = ctx
             .get_world_package_strings()
             .iter()
             .filter_map(|s| AccountAddress::from_str(s).ok())
             .collect();
 
-        Self { env, package_set }
+        Self {
+            ctx: ctx.clone(),
+            package_set,
+        }
     }
 
     fn is_character(&self, obj: &Object) -> bool {
@@ -79,10 +82,10 @@ impl Processor for CharacterHandler {
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
         let mut results = vec![];
-        let cp_sequence = checkpoint.summary.sequence_number as i64;
+        let checkpoint_updated = checkpoint.summary.sequence_number as i64;
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, self.env) {
+            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
                 continue;
             }
 
@@ -91,15 +94,19 @@ impl Processor for CharacterHandler {
 
                 match change.id_operation {
                     IDOperation::Created | IDOperation::None => {
-                        if let Some(version) = change.output_version {
-                            let key = ObjectKey(object_id, version);
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
 
-                            if let Some(obj) = checkpoint.object_set.get(&key) {
-                                if self.is_character(obj) {
-                                    let character = StoredCharacter::from_object(obj, cp_sequence);
-                                    results.push(CharacterAction::Upsert(character));
-                                }
-                            }
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_character(obj) {
+                            let character = StoredCharacter::from_object(obj, checkpoint_updated);
+                            results.push(CharacterAction::Upsert(character));
                         }
                     }
                     IDOperation::Deleted => {
@@ -129,37 +136,19 @@ impl Handler for CharacterHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::characters::dsl::*;
 
-        let mut upsert_map: HashMap<String, &StoredCharacter> = HashMap::new();
+        let mut to_upsert = Vec::new();
         let mut to_delete = Vec::new();
 
         for action in batch {
             match action {
-                CharacterAction::Upsert(character) => {
-                    let entry = upsert_map.entry(character.id.clone());
-
-                    match entry {
-                        Entry::Occupied(mut entry) => {
-                            if character.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(character);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(character);
-                        }
-                    }
-                }
+                CharacterAction::Upsert(character) => to_upsert.push(character),
                 CharacterAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredCharacter> = upsert_map.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             diesel::insert_into(characters)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict(id)
                 .do_update()
                 .set((
@@ -185,8 +174,6 @@ impl Handler for CharacterHandler {
                 .execute(conn)
                 .await?;
         }
-
-        // Todo: Broadcast events for all of the above entry changes via websocket.
 
         Ok(batch.len())
     }

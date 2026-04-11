@@ -7,9 +7,9 @@ use sui_sdk_types::Address;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::models::MoveAction;
-use crate::models::MoveStatus;
-use crate::models::MoveTenantItemId;
+use crate::models::world::MoveAction;
+use crate::models::world::MoveStatus;
+use crate::models::world::MoveTenantItemId;
 use crate::schema::indexer::events_status_changed;
 
 #[derive(Deserialize)]

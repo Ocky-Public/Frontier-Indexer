@@ -1,10 +1,16 @@
-use crate::AppEnv;
 use std::sync::Arc;
-use sui_indexer_alt_framework::types::full_checkpoint_content::{
-    Checkpoint, ExecutedTransaction, ObjectSet,
-};
+
+use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
+use sui_indexer_alt_framework::types::full_checkpoint_content::ExecutedTransaction;
+use sui_indexer_alt_framework::types::full_checkpoint_content::ObjectSet;
+
 use sui_types::effects::TransactionEffectsAPI;
 use sui_types::transaction::{Command, TransactionDataAPI};
+
+pub mod app;
+pub mod world;
+
+use crate::AppContext;
 
 /// Captures common transaction metadata for event processing.
 pub struct EventMeta {
@@ -64,29 +70,13 @@ impl EventMeta {
     }
 }
 
-// List of all handlers
-pub mod world;
-
-pub use world::access::owner_cap_created_handler::*;
-pub use world::access::owner_cap_handler::*;
-pub use world::access::owner_cap_transferred_handler::*;
-
-pub use world::assemblies::assembly_created_handler::*;
-pub use world::assemblies::assembly_handler::*;
-
-pub use world::characters::character_created_handler::*;
-pub use world::characters::character_handler::*;
-
-pub use world::primitives::location_revealed_handler::*;
-pub use world::primitives::status_changed_handler::*;
-
 pub(crate) fn is_indexed_tx(
     tx: &ExecutedTransaction,
     checkpoint_objects: &ObjectSet,
-    env: AppEnv,
+    ctx: &AppContext,
 ) -> bool {
-    let app_addresses = env.package_addresses();
-    let app_packages = env.package_ids();
+    let app_addresses = ctx.package_addresses();
+    let app_packages = ctx.package_ids();
 
     // Check input object against all known package versions
     let has_app_input = tx.input_objects(checkpoint_objects).any(|obj| {
@@ -97,6 +87,23 @@ pub(crate) fn is_indexed_tx(
     });
 
     if has_app_input {
+        return true;
+    }
+
+    // Check if any changed object is in our table registry
+    let touches_registered_table = tx
+        .effects
+        .all_changed_objects()
+        .iter()
+        .any(|(entry, _, _)| {
+            if ctx.tables.contains(&entry.0.to_canonical_string(true)) {
+                return true;
+            }
+
+            false
+        });
+
+    if touches_registered_table {
         return true;
     }
 

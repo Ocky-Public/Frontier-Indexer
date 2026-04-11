@@ -5,8 +5,8 @@ use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
 use sui_types::object::Object;
 
-use crate::models::MoveMetadata;
-use crate::models::MoveTenantItemId;
+use crate::models::world::MoveMetadata;
+use crate::models::world::MoveTenantItemId;
 use crate::schema::indexer::characters;
 
 #[derive(Deserialize)]

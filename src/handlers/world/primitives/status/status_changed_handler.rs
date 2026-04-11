@@ -15,29 +15,32 @@ use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
 use crate::handlers::is_indexed_tx;
 use crate::handlers::EventMeta;
-use crate::models::StoredAssemblyCreated;
+use crate::models::world::StoredStatusChanged;
 
-use crate::AppEnv;
+use crate::AppContext;
 
-pub struct AssemblyCreatedHandler {
-    env: AppEnv,
+pub struct StatusChangedHandler {
+    ctx: AppContext,
     package_set: HashSet<AccountAddress>,
 }
 
-impl AssemblyCreatedHandler {
-    pub fn new(env: AppEnv) -> Self {
-        let package_set: HashSet<AccountAddress> = env
+impl StatusChangedHandler {
+    pub fn new(ctx: &AppContext) -> Self {
+        let package_set: HashSet<AccountAddress> = ctx
             .get_world_package_strings()
             .iter()
             .filter_map(|s| AccountAddress::from_str(s).ok())
             .collect();
 
-        Self { env, package_set }
+        Self {
+            ctx: ctx.clone(),
+            package_set,
+        }
     }
 
-    fn is_assembly_created(&self, event: &Event) -> bool {
-        let module_name = "assembly";
-        let event_name = "AssemblyCreatedEvent";
+    fn is_status_changed(&self, event: &Event) -> bool {
+        let module_name = "status";
+        let event_name = "StatusChangedEvent";
 
         let tag = &event.type_;
 
@@ -58,15 +61,15 @@ impl AssemblyCreatedHandler {
 }
 
 #[async_trait]
-impl Processor for AssemblyCreatedHandler {
-    const NAME: &'static str = "assembly_created_handler";
-    type Value = StoredAssemblyCreated;
+impl Processor for StatusChangedHandler {
+    const NAME: &'static str = "status_changed_handler";
+    type Value = StoredStatusChanged;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
         let mut results = vec![];
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, self.env) {
+            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
                 continue;
             }
 
@@ -75,9 +78,9 @@ impl Processor for AssemblyCreatedHandler {
             let base_meta = EventMeta::from_checkpoint_tx(checkpoint, tx);
 
             for (index, ev) in events.data.iter().enumerate() {
-                if self.is_assembly_created(ev) {
+                if self.is_status_changed(ev) {
                     let meta = base_meta.with_index(index);
-                    let event = StoredAssemblyCreated::from_event(ev, &meta);
+                    let event = StoredStatusChanged::from_event(ev, &meta);
                     results.push(event);
                 }
             }
@@ -88,7 +91,7 @@ impl Processor for AssemblyCreatedHandler {
 }
 
 #[async_trait]
-impl Handler for AssemblyCreatedHandler {
+impl Handler for StatusChangedHandler {
     type Store = Db;
     type Batch = Vec<Self::Value>;
 
@@ -101,9 +104,9 @@ impl Handler for AssemblyCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_assembly_created::dsl::*;
+        use crate::schema::indexer::events_status_changed::dsl::*;
 
-        diesel::insert_into(events_assembly_created)
+        diesel::insert_into(events_status_changed)
             .values(batch)
             .on_conflict((event_id, occurred_at))
             .do_nothing()

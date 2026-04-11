@@ -15,24 +15,27 @@ use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
 use crate::handlers::is_indexed_tx;
 use crate::handlers::EventMeta;
-use crate::models::StoredLocationRevealed;
+use crate::models::world::StoredLocationRevealed;
 
-use crate::AppEnv;
+use crate::AppContext;
 
 pub struct LocationRevealedHandler {
-    env: AppEnv,
+    ctx: AppContext,
     package_set: HashSet<AccountAddress>,
 }
 
 impl LocationRevealedHandler {
-    pub fn new(env: AppEnv) -> Self {
-        let package_set: HashSet<AccountAddress> = env
+    pub fn new(ctx: &AppContext) -> Self {
+        let package_set: HashSet<AccountAddress> = ctx
             .get_world_package_strings()
             .iter()
             .filter_map(|s| AccountAddress::from_str(s).ok())
             .collect();
 
-        Self { env, package_set }
+        Self {
+            ctx: ctx.clone(),
+            package_set,
+        }
     }
 
     fn is_location_revealed(&self, event: &Event) -> bool {
@@ -66,7 +69,7 @@ impl Processor for LocationRevealedHandler {
         let mut results = vec![];
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, self.env) {
+            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
                 continue;
             }
 

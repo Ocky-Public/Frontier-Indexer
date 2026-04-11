@@ -15,24 +15,27 @@ use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
 use crate::handlers::is_indexed_tx;
 use crate::handlers::EventMeta;
-use crate::models::StoredOwnerCapTransferred;
+use crate::models::world::StoredOwnerCapTransferred;
 
-use crate::AppEnv;
+use crate::AppContext;
 
 pub struct OwnerCapTransferredHandler {
-    env: AppEnv,
+    ctx: AppContext,
     package_set: HashSet<AccountAddress>,
 }
 
 impl OwnerCapTransferredHandler {
-    pub fn new(env: AppEnv) -> Self {
-        let package_set: HashSet<AccountAddress> = env
+    pub fn new(ctx: &AppContext) -> Self {
+        let package_set: HashSet<AccountAddress> = ctx
             .get_world_package_strings()
             .iter()
             .filter_map(|s| AccountAddress::from_str(s).ok())
             .collect();
 
-        Self { env, package_set }
+        Self {
+            ctx: ctx.clone(),
+            package_set,
+        }
     }
 
     fn is_owner_cap_transferred(&self, event: &Event) -> bool {
@@ -66,7 +69,7 @@ impl Processor for OwnerCapTransferredHandler {
         let mut results = vec![];
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, self.env) {
+            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
                 continue;
             }
 

@@ -7,7 +7,7 @@ use sui_sdk_types::Address;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::models::MoveTenantItemId;
+use crate::models::world::MoveTenantItemId;
 use crate::schema::indexer::events_assembly_created;
 
 #[derive(Deserialize)]

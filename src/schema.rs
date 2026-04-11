@@ -43,6 +43,19 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.energy_config (assembly_id, package_id) {
+            #[max_length = 66]
+            package_id -> Varchar,
+            #[max_length = 20]
+            assembly_id -> Varchar,
+            energy_cost -> Int8,
+            #[max_length = 66]
+            entry_object_id -> Varchar,
+            checkpoint_updated -> Int8,
+        }
+    }
+
+    diesel::table! {
         indexer.events_assembly_created (event_id, occurred_at) {
             #[max_length = 100]
             event_id -> Varchar,
@@ -155,9 +168,26 @@ pub mod indexer {
         }
     }
 
+    diesel::table! {
+        indexer.system_table_registry (table_id) {
+            #[max_length = 66]
+            table_id -> Varchar,
+            #[max_length = 66]
+            parent_id -> Varchar,
+            #[max_length = 66]
+            package_id -> Varchar,
+            module_name -> Text,
+            struct_name -> Text,
+            key_type -> Text,
+            value_type -> Text,
+            checkpoint_updated -> Int8,
+        }
+    }
+
     diesel::allow_tables_to_appear_in_same_query!(
         assemblies,
         characters,
+        energy_config,
         events_assembly_created,
         events_character_created,
         events_location_revealed,
@@ -165,5 +195,6 @@ pub mod indexer {
         events_owner_cap_transferred,
         events_status_changed,
         owner_caps,
+        system_table_registry,
     );
 }
