@@ -294,6 +294,13 @@ async fn main() -> Result<(), anyhow::Error> {
                         sequential.clone(),
                     )
                     .await?;
+
+                indexer
+                    .sequential_pipeline(
+                        world::EnergyProductionStoppedHandler::new(&context),
+                        sequential.clone(),
+                    )
+                    .await?;
             }
         }
     }
