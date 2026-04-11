@@ -25,14 +25,17 @@ pub struct OwnerCapTransferredHandler {
 }
 
 impl OwnerCapTransferredHandler {
-    pub fn new(ctx: AppContext) -> Self {
+    pub fn new(ctx: &AppContext) -> Self {
         let package_set: HashSet<AccountAddress> = ctx
             .get_world_package_strings()
             .iter()
             .filter_map(|s| AccountAddress::from_str(s).ok())
             .collect();
 
-        Self { ctx, package_set }
+        Self {
+            ctx: ctx.clone(),
+            package_set,
+        }
     }
 
     fn is_owner_cap_transferred(&self, event: &Event) -> bool {
