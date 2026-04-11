@@ -183,6 +183,13 @@ impl Handler for AssemblyHandler {
                 .await?;
         }
 
+        if !to_delete.is_empty() {
+            diesel::delete(assemblies)
+                .filter(id.eq_any(to_delete))
+                .execute(conn)
+                .await?;
+        }
+
         Ok(batch.len())
     }
 }
