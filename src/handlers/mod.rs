@@ -90,6 +90,23 @@ pub(crate) fn is_indexed_tx(
         return true;
     }
 
+    // Check if any changed object is in our table registry
+    let touches_registered_table = tx
+        .effects
+        .all_changed_objects()
+        .iter()
+        .any(|(entry, _, _)| {
+            if ctx.tables.contains(&entry.0.to_canonical_string(true)) {
+                return true;
+            }
+
+            false
+        });
+
+    if touches_registered_table {
+        return true;
+    }
+
     // Check if transaction has application events from any version
     if let Some(events) = &tx.events {
         let has_app_event = events.data.iter().any(|event| {
