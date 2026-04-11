@@ -1,0 +1,269 @@
+use async_trait::async_trait;
+use move_core_types::account_address::AccountAddress;
+
+use std::collections::{HashMap, HashSet};
+use std::str::FromStr;
+use std::sync::Arc;
+
+use diesel::prelude::*;
+use diesel::query_dsl::methods::FilterDsl;
+use diesel::upsert::excluded;
+use diesel_async::RunQueryDsl;
+
+use sui_types::effects::{IDOperation, TransactionEffectsAPI};
+use sui_types::object::Object;
+use sui_types::object::Owner;
+use sui_types::storage::ObjectKey;
+use sui_types::TypeTag;
+
+use sui_indexer_alt_framework::pipeline::sequential::Handler;
+use sui_indexer_alt_framework::pipeline::Processor;
+use sui_indexer_alt_framework::postgres::{Connection, Db};
+use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
+
+use crate::handlers::is_indexed_tx;
+use crate::models::system::{MoveEnergyConfig, StoredTableRecord};
+use crate::models::world::StoredEnergyConfig;
+use crate::AppContext;
+
+pub struct EnergyConfigHandler {
+    ctx: AppContext,
+    package_set: HashSet<AccountAddress>,
+}
+
+impl EnergyConfigHandler {
+    pub fn new(ctx: &AppContext) -> Self {
+        let package_set: HashSet<AccountAddress> = ctx
+            .get_world_package_strings()
+            .iter()
+            .filter_map(|s| AccountAddress::from_str(s).ok())
+            .collect();
+
+        Self {
+            ctx: ctx.clone(),
+            package_set,
+        }
+    }
+
+    fn is_energy_config(&self, obj: &Object) -> bool {
+        let module_name = "energy";
+        let struct_name = "EnergyConfig";
+
+        let Some(move_type) = obj.type_() else {
+            return false;
+        };
+
+        let Some(tag) = move_type.other() else {
+            return false;
+        };
+
+        if !self.package_set.contains(&tag.address) {
+            return false;
+        }
+
+        tag.module.as_str() == module_name && tag.name.as_str() == struct_name
+    }
+
+    fn is_energy_config_entry(
+        &self,
+        obj: &Object,
+        table_updates: &HashMap<String, Arc<StoredTableRecord>>,
+    ) -> Option<Arc<StoredTableRecord>> {
+        let owner_module_name = "energy";
+        let owner_struct_name = "EnergyConfig";
+
+        let Some(move_type) = obj.type_() else {
+            return None;
+        };
+
+        if !move_type.is_dynamic_field() || move_type.type_params().len() <= 1 {
+            return None;
+        }
+
+        if !matches!(move_type.type_params()[0].as_ref(), TypeTag::U64) {
+            return None;
+        }
+
+        if !matches!(move_type.type_params()[1].as_ref(), TypeTag::U64) {
+            return None;
+        }
+
+        let Owner::ObjectOwner(owner_str) = obj.owner else {
+            return None;
+        };
+
+        let owner_id = owner_str.to_string();
+
+        // Check the entry against tables added in the same checkpoint.
+        if table_updates.contains_key(&owner_id) {
+            Some(table_updates.get(&owner_id).as_ref());
+        }
+
+        // Check the entry against the table registry.
+        let Some(table) = self.ctx.tables.get_record(&owner_id) else {
+            return None;
+        };
+
+        let package_id = AccountAddress::from_str(&table.package_id)
+            .expect("Failed to parse package_id stored in table registry.");
+
+        if table.module_name != owner_module_name {
+            return None;
+        }
+
+        if table.struct_name != owner_struct_name {
+            return None;
+        }
+
+        if !self.package_set.contains(&package_id) {
+            return None;
+        }
+
+        Some(table)
+    }
+}
+
+pub enum EnergyConfigAction {
+    Register(StoredTableRecord),
+    Upsert(StoredEnergyConfig),
+    Delete(String),
+}
+
+#[async_trait]
+impl Processor for EnergyConfigHandler {
+    const NAME: &'static str = "energy_config_handler";
+    type Value = EnergyConfigAction;
+
+    async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
+        let mut results = vec![];
+        let checkpoint_updated = checkpoint.summary.sequence_number as i64;
+
+        let mut table_updates = HashMap::new();
+
+        for tx in &checkpoint.transactions {
+            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
+                continue;
+            }
+
+            for change in &tx.effects.object_changes() {
+                let object_id = change.id;
+
+                match change.id_operation {
+                    IDOperation::Created | IDOperation::None => {
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
+
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_energy_config(obj) {
+                            let move_obj =
+                                obj.data.try_as_move().expect("Object is not a Move object");
+                            let bytes = move_obj.contents();
+
+                            let energy_config: MoveEnergyConfig = bcs::from_bytes(bytes)
+                                .expect("Failed to deserialize EnerfyConfig object");
+
+                            let move_type = move_obj.type_();
+
+                            let tag = move_type
+                                .other()
+                                .expect("Failed to get appropriate move type");
+
+                            let table_id =
+                                energy_config.assembly_energy.id.to_canonical_string(true);
+
+                            let table_record = StoredTableRecord {
+                                table_id: table_id.clone(),
+                                parent_id: energy_config.id.to_hex(),
+                                package_id: tag.address.to_canonical_string(true),
+                                module_name: tag.module.to_string(),
+                                struct_name: tag.name.to_string(),
+                                key_type: "u64".to_string(),
+                                value_type: "u64".to_string(),
+                                checkpoint_updated,
+                            };
+
+                            table_updates.insert(table_id, Arc::new(table_record.clone()));
+                            results.push(EnergyConfigAction::Register(table_record));
+                        }
+
+                        if let Some(table) = self.is_energy_config_entry(obj, &table_updates) {
+                            let config = StoredEnergyConfig::from_object(
+                                obj,
+                                table.package_id.clone(),
+                                checkpoint_updated,
+                            );
+
+                            results.push(EnergyConfigAction::Upsert(config));
+                        }
+                    }
+                    IDOperation::Deleted => {
+                        results.push(EnergyConfigAction::Delete(object_id.to_string()));
+                    }
+                }
+            }
+        }
+
+        Ok(results)
+    }
+}
+
+#[async_trait]
+impl Handler for EnergyConfigHandler {
+    type Store = Db;
+    type Batch = Vec<Self::Value>;
+
+    fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
+        batch.extend(values);
+    }
+
+    async fn commit<'a>(
+        &self,
+        batch: &Self::Batch,
+        conn: &mut Connection<'a>,
+    ) -> anyhow::Result<usize> {
+        use crate::schema::indexer::energy_config::dsl::*;
+
+        let mut to_upsert = Vec::new();
+        let mut to_delete = Vec::new();
+
+        for action in batch {
+            match action {
+                EnergyConfigAction::Register(table) => {
+                    self.ctx.tables.add_table(conn, table).await?;
+                }
+                EnergyConfigAction::Upsert(entry) => to_upsert.push(entry),
+                EnergyConfigAction::Delete(id_str) => to_delete.push(id_str.clone()),
+            }
+        }
+
+        if !to_upsert.is_empty() {
+            diesel::insert_into(energy_config)
+                .values(to_upsert)
+                .on_conflict((assembly_id, package_id))
+                .do_update()
+                .set((
+                    energy_cost.eq(excluded(energy_cost)),
+                    entry_object_id.eq(excluded(entry_object_id)),
+                    checkpoint_updated.eq(excluded(checkpoint_updated)),
+                ))
+                .filter(checkpoint_updated.lt(excluded(checkpoint_updated)))
+                .execute(conn)
+                .await?;
+        }
+
+        if !to_delete.is_empty() {
+            diesel::delete(energy_config)
+                .filter(entry_object_id.eq_any(to_delete))
+                .execute(conn)
+                .await?;
+        }
+
+        Ok(batch.len())
+    }
+}
