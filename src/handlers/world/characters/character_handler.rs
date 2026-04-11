@@ -30,14 +30,17 @@ pub struct CharacterHandler {
 }
 
 impl CharacterHandler {
-    pub fn new(ctx: AppContext) -> Self {
+    pub fn new(ctx: &AppContext) -> Self {
         let package_set: HashSet<AccountAddress> = ctx
             .get_world_package_strings()
             .iter()
             .filter_map(|s| AccountAddress::from_str(s).ok())
             .collect();
 
-        Self { ctx, package_set }
+        Self {
+            ctx: ctx.clone(),
+            package_set,
+        }
     }
 
     fn is_character(&self, obj: &Object) -> bool {
@@ -143,42 +146,35 @@ impl Handler for CharacterHandler {
             }
         }
 
-        conn.build_transaction()
-            .read_write()
-            .run::<usize, anyhow::Error, _>(|tx_conn| {
-                Box::pin(async move {
-                    if !to_upsert.is_empty() {
-                        diesel::insert_into(characters)
-                            .values(to_upsert)
-                            .on_conflict(id)
-                            .do_update()
-                            .set((
-                                item_id.eq(excluded(item_id)),
-                                tenant.eq(excluded(tenant)),
-                                owner_cap_id.eq(excluded(owner_cap_id)),
-                                owner_address.eq(excluded(owner_address)),
-                                tribe_id.eq(excluded(tribe_id)),
-                                name.eq(excluded(name)),
-                                description.eq(excluded(description)),
-                                url.eq(excluded(url)),
-                                checkpoint_updated.eq(excluded(checkpoint_updated)),
-                            ))
-                            .filter(checkpoint_updated.lt(excluded(checkpoint_updated)))
-                            .execute(tx_conn)
-                            .await?;
-                    }
+        if !to_upsert.is_empty() {
+            diesel::insert_into(characters)
+                .values(to_upsert)
+                .on_conflict(id)
+                .do_update()
+                .set((
+                    item_id.eq(excluded(item_id)),
+                    tenant.eq(excluded(tenant)),
+                    owner_cap_id.eq(excluded(owner_cap_id)),
+                    owner_address.eq(excluded(owner_address)),
+                    tribe_id.eq(excluded(tribe_id)),
+                    name.eq(excluded(name)),
+                    description.eq(excluded(description)),
+                    url.eq(excluded(url)),
+                    checkpoint_updated.eq(excluded(checkpoint_updated)),
+                ))
+                .filter(checkpoint_updated.lt(excluded(checkpoint_updated)))
+                .execute(conn)
+                .await?;
+        }
 
-                    // Deletions happen last incase an object was updated before deletion.
-                    if !to_delete.is_empty() {
-                        diesel::delete(characters)
-                            .filter(id.eq_any(to_delete))
-                            .execute(tx_conn)
-                            .await?;
-                    }
+        // Deletions happen last incase an object was updated before deletion.
+        if !to_delete.is_empty() {
+            diesel::delete(characters)
+                .filter(id.eq_any(to_delete))
+                .execute(conn)
+                .await?;
+        }
 
-                    Ok(batch.len())
-                })
-            })
-            .await
+        Ok(batch.len())
     }
 }
