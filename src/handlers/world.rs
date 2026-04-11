@@ -46,7 +46,6 @@ pub use primitives::energy::energy_production_started_handler::*;
 pub use primitives::energy::energy_production_stopped_handler::*;
 pub use primitives::energy::energy_released_handler::*;
 pub use primitives::energy::energy_reserved_handler::*;
-pub use primitives::energy::energy_source_handler::*;
 
 pub use primitives::fuel::fuel_config_handler::*;
 pub use primitives::fuel::fuel_efficiency_removed_handler::*;
