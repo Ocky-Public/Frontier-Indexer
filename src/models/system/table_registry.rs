@@ -8,6 +8,8 @@ use sui_sdk_types::Address;
 use sui_types::collection_types::Table;
 
 use diesel::prelude::*;
+use diesel::query_dsl::methods::FilterDsl;
+use diesel::upsert::excluded;
 use diesel_async::RunQueryDsl;
 
 use crate::schema::indexer::system_table_registry;
@@ -65,6 +67,17 @@ impl TableRegistry {
 
         diesel::insert_into(system_table_registry)
             .values(record)
+            .on_conflict(table_id)
+            .do_update()
+            .set((
+                parent_id.eq(excluded(parent_id)),
+                module_name.eq(excluded(module_name)),
+                struct_name.eq(excluded(struct_name)),
+                key_type.eq(excluded(key_type)),
+                value_type.eq(excluded(value_type)),
+                checkpoint_updated.eq(excluded(checkpoint_updated)),
+            ))
+            .filter(checkpoint_updated.lt(excluded(checkpoint_updated)))
             .execute(conn)
             .await?;
 
