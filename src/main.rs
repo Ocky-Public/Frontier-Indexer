@@ -1,8 +1,6 @@
 use anyhow::Context;
 use clap::Parser;
 use prometheus::Registry;
-use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio;
 use url::Url;
@@ -12,6 +10,8 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 use sui_indexer_alt_framework::ingestion::ingestion_client::IngestionClientArgs;
 use sui_indexer_alt_framework::ingestion::streaming_client::StreamingClientArgs;
 use sui_indexer_alt_framework::ingestion::{ClientArgs, IngestionConfig};
+use sui_indexer_alt_framework::pipeline::sequential::SequentialConfig;
+use sui_indexer_alt_framework::pipeline::CommitterConfig;
 use sui_indexer_alt_framework::{Indexer, IndexerArgs};
 use sui_indexer_alt_metrics::db::DbConnectionStatsCollector;
 use sui_indexer_alt_metrics::{MetricsArgs, MetricsService};
@@ -23,88 +23,8 @@ use indexer::{AppEnv, TESTNET_REMOTE_STORE_URL};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
-#[derive(Debug, Clone, clap::ValueEnum)]
-pub enum Package {
-    /// Index your own application data.
-    App,
-
-    /// Index the frontier world data.
-    World,
-}
-
-#[derive(Parser)]
-struct DbConfig {
-    #[arg(long, env = "DB_USER", default_value = "postgres")]
-    pub db_user: String,
-
-    #[arg(long, env = "DB_PASSWORD", default_value = "postgres")]
-    pub db_password: String,
-
-    #[arg(long, env = "DB_HOST", default_value = "localhost")]
-    pub db_host: String,
-
-    #[arg(long, env = "DB_PORT", default_value_t = 5432)]
-    pub db_port: u16,
-
-    #[arg(long, env = "DB_NAME", default_value = "postgres")]
-    pub db_name: String,
-
-    #[arg(long, env = "DB_SCHEMA", default_value = "indexer")]
-    pub db_schema: String,
-}
-
-#[derive(Debug, Clone, Copy, clap::ValueEnum)]
-enum SandboxEnv {
-    Testnet,
-    Localnet,
-}
-
-#[derive(Parser)]
-struct SandboxArgs {
-    #[arg(
-        long,
-        env = "SANDBOX",
-        requires = "app_package_id",
-        default_value_t = false
-    )]
-    pub enabled: bool,
-
-    #[arg(long, env = "SANDBOX_NETWORK", default_value = "localnet")]
-    env: SandboxEnv,
-
-    #[arg(long, env = "SANDBOX_APP_PACKAGES", value_delimiter = ',')]
-    pub app_package_id: Vec<String>,
-
-    #[clap(long, env = "SANDBOX_WORLD_PACKAGES", value_delimiter = ',')]
-    pub world_packages: Vec<String>,
-
-    #[clap(long, env = "SANDBOX_INGESTION_PATH")]
-    pub local_ingestion_path: Option<PathBuf>,
-}
-
-#[derive(Parser)]
-struct AppConfig {
-    #[command(flatten)]
-    pub db_config: DbConfig,
-
-    #[arg(long, env = "SUI_NETWORK", default_value = "testnet")]
-    pub network: Option<AppEnv>,
-
-    #[arg(long, env = "PACKAGES", value_enum, default_values = ["app", "world"], value_delimiter = ',')]
-    pub packages: Vec<Package>,
-
-    #[arg(long, env = "METRICS_ADDRESS", default_value = "0.0.0.0:9184")]
-    pub metrics_address: SocketAddr,
-
-    #[arg(long, env = "FIRST_CHECKPOINT")]
-    pub first_checkpoint: Option<u64>,
-
-    #[arg(long, env = "LAST_CHECKPOINT")]
-    pub last_checkpoint: Option<u64>,
-
-    #[command(flatten)]
-    pub sandbox: SandboxArgs,
-}
+pub mod config;
+pub use config::*;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -117,36 +37,101 @@ async fn main() -> Result<(), anyhow::Error> {
     let AppConfig {
         metrics_address,
         db_config,
+        indexer_config,
+        sequential,
+        ingestion,
         network,
         packages,
-        first_checkpoint,
-        last_checkpoint,
         sandbox,
     } = AppConfig::parse();
 
+    let DbConfig {
+        db_user,
+        db_password,
+        db_host,
+        db_port,
+        db_name,
+        db_schema,
+        db_connection_pool_size,
+        db_connection_timeout_ms,
+        db_statement_timeout_ms,
+        tls_verify_cert,
+        tls_ca_cert_path,
+    } = db_config;
+
     let database_str = format!(
         "postgres://{}:{}@{}:{}/{}?options=-csearch_path%3D{}",
-        db_config.db_user,
-        db_config.db_password,
-        db_config.db_host,
-        db_config.db_port,
-        db_config.db_name,
-        db_config.db_schema
+        db_user, db_password, db_host, db_port, db_name, db_schema
     );
 
     let database_url = Url::parse(&database_str).expect("Failed to construct valid Database URL");
 
     let db_args = DbArgs {
-        ..Default::default()
+        db_connection_pool_size,
+        db_connection_timeout_ms,
+        db_statement_timeout_ms,
+        tls_verify_cert,
+        tls_ca_cert_path,
     };
+
+    let IndexerConfig {
+        first_checkpoint,
+        last_checkpoint,
+        pipeline,
+    } = indexer_config;
 
     let indexer_args = IndexerArgs {
         first_checkpoint,
         last_checkpoint,
+        pipeline,
         ..Default::default()
     };
 
     let streaming_args = StreamingClientArgs {
+        ..Default::default()
+    };
+
+    let Sequential {
+        min_eager_rows,
+        checkpoint_lag,
+        max_batch_checkpoints,
+        processor_channel_size,
+        write_concurrency,
+        collect_interval_ms,
+        watermark_interval_ms,
+        watermark_interval_jitter_ms,
+    } = sequential;
+
+    let sequential = SequentialConfig {
+        min_eager_rows,
+        checkpoint_lag,
+        max_batch_checkpoints,
+        processor_channel_size,
+        committer: CommitterConfig {
+            write_concurrency,
+            collect_interval_ms,
+            watermark_interval_ms,
+            watermark_interval_jitter_ms,
+        },
+        ..Default::default()
+    };
+
+    let Ingestion {
+        checkpoint_buffer_size,
+        retry_interval_ms,
+        streaming_backoff_initial_batch_size,
+        streaming_backoff_max_batch_size,
+        streaming_connection_timeout_ms,
+        streaming_statement_timeout_ms,
+    } = ingestion;
+
+    let ingestion_config = IngestionConfig {
+        checkpoint_buffer_size,
+        retry_interval_ms,
+        streaming_backoff_initial_batch_size,
+        streaming_backoff_max_batch_size,
+        streaming_connection_timeout_ms,
+        streaming_statement_timeout_ms,
         ..Default::default()
     };
 
@@ -195,7 +180,7 @@ async fn main() -> Result<(), anyhow::Error> {
     };
 
     let registry = Registry::new_custom(Some("frontier_indexer".into()), None)
-        .context("Failt to create Prometheus registry.")?;
+        .context("Failed to create Prometheus registry.")?;
 
     let metrics = MetricsService::new(MetricsArgs { metrics_address }, registry.clone());
 
@@ -222,14 +207,16 @@ async fn main() -> Result<(), anyhow::Error> {
         store.clone(),
     )))?;
 
+    let client_args = ClientArgs {
+        ingestion: ingestion_args,
+        streaming: streaming_args,
+    };
+
     let mut indexer = Indexer::new(
         store.clone(),
         indexer_args,
-        ClientArgs {
-            ingestion: ingestion_args,
-            streaming: streaming_args,
-        },
-        IngestionConfig::default(),
+        client_args,
+        ingestion_config,
         None,
         metrics.registry(),
     )
@@ -243,61 +230,68 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer
                     .sequential_pipeline(
                         world::EnergyConfigHandler::new(&context),
-                        Default::default(),
+                        sequential.clone(),
                     )
                     .await?;
 
                 indexer
                     .sequential_pipeline(
                         world::OwnerCapCreatedHandler::new(&context),
-                        Default::default(),
+                        sequential.clone(),
                     )
                     .await?;
 
                 indexer
                     .sequential_pipeline(
                         world::OwnerCapTransferredHandler::new(&context),
-                        Default::default(),
+                        sequential.clone(),
                     )
                     .await?;
 
                 indexer
-                    .sequential_pipeline(world::OwnerCapHandler::new(&context), Default::default())
+                    .sequential_pipeline(world::OwnerCapHandler::new(&context), sequential.clone())
                     .await?;
 
                 indexer
-                    .sequential_pipeline(world::AssemblyHandler::new(&context), Default::default())
+                    .sequential_pipeline(world::AssemblyHandler::new(&context), sequential.clone())
                     .await?;
 
                 indexer
                     .sequential_pipeline(
                         world::AssemblyCreatedHandler::new(&context),
-                        Default::default(),
+                        sequential.clone(),
                     )
                     .await?;
 
                 indexer
-                    .sequential_pipeline(world::CharacterHandler::new(&context), Default::default())
+                    .sequential_pipeline(world::CharacterHandler::new(&context), sequential.clone())
                     .await?;
 
                 indexer
                     .sequential_pipeline(
                         world::CharacterCreatedHandler::new(&context),
-                        Default::default(),
+                        sequential.clone(),
                     )
                     .await?;
 
                 indexer
                     .sequential_pipeline(
                         world::LocationRevealedHandler::new(&context),
-                        Default::default(),
+                        sequential.clone(),
                     )
                     .await?;
 
                 indexer
                     .sequential_pipeline(
                         world::StatusChangedHandler::new(&context),
-                        Default::default(),
+                        sequential.clone(),
+                    )
+                    .await?;
+
+                indexer
+                    .sequential_pipeline(
+                        world::EnergyProductionStartedHandler::new(&context),
+                        sequential.clone(),
                     )
                     .await?;
             }
