@@ -167,13 +167,13 @@ impl Processor for EnergyConfigHandler {
                             let bytes = move_obj.contents();
 
                             let energy_config: MoveEnergyConfig = bcs::from_bytes(bytes)
-                                .expect("Failed to deserialize EnerfyConfig object");
+                                .expect("Failed to deserialize EnergyConfig object");
 
                             let move_type = move_obj.type_();
 
                             let tag = move_type
                                 .other()
-                                .expect("Failed to get appropriate move type");
+                                .expect("Failed to get appropriate move type for EnergyConfig");
 
                             let table_id =
                                 energy_config.assembly_energy.id.to_canonical_string(true);
@@ -184,8 +184,8 @@ impl Processor for EnergyConfigHandler {
                                 package_id: tag.address.to_canonical_string(true),
                                 module_name: tag.module.to_string(),
                                 struct_name: tag.name.to_string(),
-                                key_type: "u64".to_string(),
-                                value_type: "u64".to_string(),
+                                key_type: TypeTag::U64.to_string(),
+                                value_type: TypeTag::U64.to_string(),
                                 checkpoint_updated,
                             };
 
@@ -240,6 +240,7 @@ impl Handler for EnergyConfigHandler {
                 }
                 EnergyConfigAction::Upsert(config) => {
                     let current = upsert_map.entry(config.assembly_id.clone());
+
                     match current {
                         Entry::Occupied(mut entry) => {
                             if config.checkpoint_updated > entry.get().checkpoint_updated {
