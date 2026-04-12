@@ -315,6 +315,13 @@ async fn main() -> Result<(), anyhow::Error> {
                         sequential.clone(),
                     )
                     .await?;
+
+                indexer
+                    .sequential_pipeline(
+                        world::FuelEfficiencySetHandler::new(&context),
+                        sequential.clone(),
+                    )
+                    .await?;
             }
         }
     }
