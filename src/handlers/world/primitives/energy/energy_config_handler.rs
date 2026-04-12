@@ -195,7 +195,7 @@ impl Processor for EnergyConfigHandler {
                         if let Some(table) = self.is_energy_config_entry(obj, &table_updates) {
                             let config = StoredEnergyConfig::from_object(
                                 obj,
-                                table.package_id.clone(),
+                                table.table_id.clone(),
                                 checkpoint_updated,
                             );
 
