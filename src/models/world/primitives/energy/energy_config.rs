@@ -22,7 +22,7 @@ impl StoredEnergyConfig {
         let bytes = move_obj.contents();
 
         let entry: Field<u64, u64> =
-            bcs::from_bytes(bytes).expect("Failed to deserialze Entry object");
+            bcs::from_bytes(bytes).expect("Failed to deserialze Energy config object");
 
         Self {
             package_id: table_id,
