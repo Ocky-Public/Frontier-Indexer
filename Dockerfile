@@ -1,4 +1,4 @@
-FROM debian:trixie-slim AS runtime
+FROM docker.io/debian:trixie-slim AS runtime
 
 RUN apt-get update
 RUN apt-get -y --no-install-recommends install \

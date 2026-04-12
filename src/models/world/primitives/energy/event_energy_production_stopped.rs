@@ -1,0 +1,40 @@
+use chrono::{DateTime, Utc};
+use diesel::prelude::*;
+use serde::Deserialize;
+
+use sui_indexer_alt_framework::FieldCount;
+use sui_sdk_types::Address;
+use sui_types::event::Event;
+
+use crate::handlers::EventMeta;
+use crate::schema::indexer::events_energy_production_stopped;
+
+#[derive(Deserialize)]
+pub struct MoveEnergyProductionStopped {
+    energy_source_id: Address,
+}
+
+#[derive(Insertable, Debug, Clone, FieldCount)]
+#[diesel(table_name = events_energy_production_stopped)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct StoredEnergyProductionStopped {
+    event_id: String,
+    occurred_at: DateTime<Utc>,
+    id: String,
+}
+
+impl StoredEnergyProductionStopped {
+    pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
+        let move_event: MoveEnergyProductionStopped = bcs::from_bytes(&event.contents)
+            .expect("Failed to deserliaze Energy Production Started event");
+
+        let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
+            .expect("Failed to parse checkpoint timestamp into DateTime");
+
+        Self {
+            event_id: meta.event_digest(),
+            occurred_at,
+            id: move_event.energy_source_id.to_hex(),
+        }
+    }
+}
