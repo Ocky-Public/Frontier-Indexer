@@ -52,6 +52,7 @@ pub use primitives::fuel::fuel_burning_stopped_handler::*;
 pub use primitives::fuel::fuel_burning_updated_handler::*;
 pub use primitives::fuel::fuel_config_handler::*;
 pub use primitives::fuel::fuel_deleted_handler::*;
+pub use primitives::fuel::fuel_deposited_handler::*;
 pub use primitives::fuel::fuel_efficiency_removed_handler::*;
 pub use primitives::fuel::fuel_efficiency_set_handler::*;
 
