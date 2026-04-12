@@ -11,18 +11,18 @@ use crate::schema::indexer::events_energy_production_started;
 
 #[derive(Deserialize)]
 pub struct MoveEnergyProductionStarted {
-    energy_source_id: Address,
-    current_energy_production: u64,
+    pub energy_source_id: Address,
+    pub current_energy_production: u64,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_energy_production_started)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredEnergyProductionStarted {
-    event_id: String,
-    occurred_at: DateTime<Utc>,
-    id: String,
-    current_energy_production: i64,
+    pub event_id: String,
+    pub occurred_at: DateTime<Utc>,
+    pub id: String,
+    pub current_energy_production: i64,
 }
 
 impl StoredEnergyProductionStarted {

@@ -10,16 +10,16 @@ use crate::schema::indexer::events_fuel_efficiency_removed;
 
 #[derive(Deserialize)]
 pub struct MoveFuelEfficiencyRemoved {
-    fuel_type_id: u64,
+    pub fuel_type_id: u64,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_fuel_efficiency_removed)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredFuelEfficiencyRemoved {
-    event_id: String,
-    occurred_at: DateTime<Utc>,
-    type_id: i64,
+    pub event_id: String,
+    pub occurred_at: DateTime<Utc>,
+    pub type_id: i64,
 }
 
 impl StoredFuelEfficiencyRemoved {

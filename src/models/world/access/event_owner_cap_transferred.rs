@@ -11,10 +11,10 @@ use crate::schema::indexer::events_owner_cap_transferred;
 
 #[derive(Deserialize)]
 pub struct MoveOwnerCapTransferred {
-    owner_cap_id: Address,
-    authorized_object_id: Address,
-    previous_owner: Address,
-    owner: Address,
+    pub owner_cap_id: Address,
+    pub authorized_object_id: Address,
+    pub previous_owner: Address,
+    pub owner: Address,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]

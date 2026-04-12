@@ -12,15 +12,15 @@ use crate::schema::indexer::events_location_revealed;
 
 #[derive(Deserialize)]
 pub struct MoveLocationRevealed {
-    assembly_id: Address,
-    assembly_key: MoveTenantItemId,
-    type_id: u64,
-    owner_cap_id: Address,
-    location_hash: Vec<u8>,
-    solarsystem: u64,
-    x: String,
-    y: String,
-    z: String,
+    pub assembly_id: Address,
+    pub assembly_key: MoveTenantItemId,
+    pub type_id: u64,
+    pub owner_cap_id: Address,
+    pub location_hash: Vec<u8>,
+    pub solarsystem: u64,
+    pub x: String,
+    pub y: String,
+    pub z: String,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
