@@ -48,11 +48,17 @@ pub use primitives::energy::event_energy_production_stopped::*;
 pub use primitives::energy::event_energy_released::*;
 pub use primitives::energy::event_energy_reserved::*;
 
+pub use primitives::fuel::event_fuel::*;
+pub use primitives::fuel::event_fuel_burning_started::*;
+pub use primitives::fuel::event_fuel_burning_stopped::*;
+pub use primitives::fuel::event_fuel_burning_updated::*;
+pub use primitives::fuel::event_fuel_deleted::*;
+pub use primitives::fuel::event_fuel_deposited::*;
 pub use primitives::fuel::event_fuel_effciency_set::*;
 pub use primitives::fuel::event_fuel_efficiency_removed::*;
+pub use primitives::fuel::event_fuel_withdrawn::*;
 pub use primitives::fuel::fuel::*;
 pub use primitives::fuel::fuel_config::*;
-pub use primitives::fuel::event_fuel::*;
 
 pub use primitives::inventories::event_item_burned::*;
 pub use primitives::inventories::event_item_deposited::*;
