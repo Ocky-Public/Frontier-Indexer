@@ -63,7 +63,7 @@ pub struct IndexerConfig {
 
 #[derive(Parser)]
 pub struct Sequential {
-    #[arg(long, env = "CHECKPOINT_LAG")]
+    #[arg(long, env = "CHECKPOINT_LAG", default_value_t = 0)]
     pub checkpoint_lag: u64,
 
     #[arg(long, env = "MIN_EAGER_ROWS")]
