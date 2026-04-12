@@ -11,22 +11,22 @@ use crate::schema::indexer::events_energy_reserved;
 
 #[derive(Deserialize)]
 pub struct MoveEnergyReserved {
-    energy_source_id: Address,
-    assembly_type_id: u64,
-    energy_reserved: u64,
-    total_reserved_energy: u64,
+    pub energy_source_id: Address,
+    pub assembly_type_id: u64,
+    pub energy_reserved: u64,
+    pub total_reserved_energy: u64,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_energy_reserved)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredEnergyReserved {
-    event_id: String,
-    occurred_at: DateTime<Utc>,
-    id: String,
-    type_id: i64,
-    reserved: i64,
-    reserved_total: i64,
+    pub event_id: String,
+    pub occurred_at: DateTime<Utc>,
+    pub id: String,
+    pub type_id: i64,
+    pub reserved: i64,
+    pub reserved_total: i64,
 }
 
 impl StoredEnergyReserved {

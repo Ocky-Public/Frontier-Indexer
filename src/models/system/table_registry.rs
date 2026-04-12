@@ -1,11 +1,7 @@
-use serde::Deserialize;
-
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use sui_pg_db::Connection;
-use sui_sdk_types::Address;
-use sui_types::collection_types::Table;
 
 use diesel::prelude::*;
 use diesel::query_dsl::methods::FilterDsl;
@@ -13,12 +9,6 @@ use diesel::upsert::excluded;
 use diesel_async::RunQueryDsl;
 
 use crate::schema::indexer::system_table_registry;
-
-#[derive(Deserialize)]
-pub struct MoveEnergyConfig {
-    pub id: Address,
-    pub assembly_energy: Table,
-}
 
 #[derive(Queryable, Insertable, Selectable, Clone, Debug)]
 #[diesel(table_name = system_table_registry)]

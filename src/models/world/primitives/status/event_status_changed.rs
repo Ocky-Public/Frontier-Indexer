@@ -14,10 +14,10 @@ use crate::schema::indexer::events_status_changed;
 
 #[derive(Deserialize)]
 pub struct MoveStatusChanged {
-    assembly_id: Address,
-    assembly_key: MoveTenantItemId,
-    status: MoveStatus,
-    action: MoveAction,
+    pub assembly_id: Address,
+    pub assembly_key: MoveTenantItemId,
+    pub status: MoveStatus,
+    pub action: MoveAction,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]

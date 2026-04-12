@@ -23,16 +23,16 @@ use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
 use crate::handlers::is_indexed_tx;
 use crate::models::system::StoredTableRecord;
-use crate::models::world::MoveEnergyConfig;
-use crate::models::world::StoredEnergyConfig;
+use crate::models::world::MoveFuelConfig;
+use crate::models::world::StoredFuelConfig;
 use crate::AppContext;
 
-pub struct EnergyConfigHandler {
+pub struct FuelConfigHandler {
     ctx: AppContext,
     package_set: HashSet<AccountAddress>,
 }
 
-impl EnergyConfigHandler {
+impl FuelConfigHandler {
     pub fn new(ctx: &AppContext) -> Self {
         let package_set: HashSet<AccountAddress> = ctx
             .get_world_package_strings()
@@ -46,9 +46,9 @@ impl EnergyConfigHandler {
         }
     }
 
-    fn is_energy_config(&self, obj: &Object) -> bool {
-        let module_name = "energy";
-        let struct_name = "EnergyConfig";
+    fn is_fuel_config(&self, obj: &Object) -> bool {
+        let module_name = "fuel";
+        let struct_name = "FuelConfig";
 
         let Some(move_type) = obj.type_() else {
             return false;
@@ -65,13 +65,13 @@ impl EnergyConfigHandler {
         tag.module.as_str() == module_name && tag.name.as_str() == struct_name
     }
 
-    fn is_energy_config_entry(
+    fn is_fuel_config_entry(
         &self,
         obj: &Object,
         table_updates: &HashMap<String, Arc<StoredTableRecord>>,
     ) -> Option<Arc<StoredTableRecord>> {
-        let owner_module_name = "energy";
-        let owner_struct_name = "EnergyConfig";
+        let owner_module_name = "fuel";
+        let owner_struct_name = "FuelConfig";
 
         let Some(move_type) = obj.type_() else {
             return None;
@@ -100,7 +100,7 @@ impl EnergyConfigHandler {
             return Some(table.clone());
         }
 
-        // Check the entry against the table registry.
+        // Check the entry agains the table registry.
         let Some(table) = self.ctx.tables.get_record(&owner_id) else {
             return None;
         };
@@ -124,16 +124,16 @@ impl EnergyConfigHandler {
     }
 }
 
-pub enum EnergyConfigAction {
+pub enum FuelConfigAction {
     Register(StoredTableRecord),
-    Upsert(StoredEnergyConfig),
+    Upsert(StoredFuelConfig),
     Delete(String),
 }
 
 #[async_trait]
-impl Processor for EnergyConfigHandler {
-    const NAME: &'static str = "energy_config_handler";
-    type Value = EnergyConfigAction;
+impl Processor for FuelConfigHandler {
+    const NAME: &'static str = "fuel_config";
+    type Value = FuelConfigAction;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
         let mut results = vec![];
@@ -161,26 +161,25 @@ impl Processor for EnergyConfigHandler {
                             continue;
                         };
 
-                        if self.is_energy_config(obj) {
+                        if self.is_fuel_config(obj) {
                             let move_obj =
                                 obj.data.try_as_move().expect("Object is not a Move object");
                             let bytes = move_obj.contents();
 
-                            let energy_config: MoveEnergyConfig = bcs::from_bytes(bytes)
-                                .expect("Failed to deserialize EnergyConfig object");
+                            let fuel_config: MoveFuelConfig = bcs::from_bytes(bytes)
+                                .expect("Failed to deserialize FuelConfig object");
 
                             let move_type = move_obj.type_();
 
                             let tag = move_type
                                 .other()
-                                .expect("Failed to get appropriate move type for EnergyConfig");
+                                .expect("Failed to get appropriate move type for FuelConfig");
 
-                            let table_id =
-                                energy_config.assembly_energy.id.to_canonical_string(true);
+                            let table_id = fuel_config.fuel_efficiency.id.to_canonical_string(true);
 
                             let table_record = StoredTableRecord {
                                 table_id: table_id.clone(),
-                                parent_id: energy_config.id.to_hex(),
+                                parent_id: fuel_config.id.to_hex(),
                                 package_id: tag.address.to_canonical_string(true),
                                 module_name: tag.module.to_string(),
                                 struct_name: tag.name.to_string(),
@@ -190,21 +189,21 @@ impl Processor for EnergyConfigHandler {
                             };
 
                             table_updates.insert(table_id, Arc::new(table_record.clone()));
-                            results.push(EnergyConfigAction::Register(table_record));
+                            results.push(FuelConfigAction::Register(table_record));
                         }
 
-                        if let Some(table) = self.is_energy_config_entry(obj, &table_updates) {
-                            let config = StoredEnergyConfig::from_object(
+                        if let Some(table) = self.is_fuel_config_entry(obj, &table_updates) {
+                            let config = StoredFuelConfig::from_object(
                                 obj,
                                 table.table_id.clone(),
                                 checkpoint_updated,
                             );
 
-                            results.push(EnergyConfigAction::Upsert(config));
+                            results.push(FuelConfigAction::Upsert(config));
                         }
                     }
                     IDOperation::Deleted => {
-                        results.push(EnergyConfigAction::Delete(object_id.to_string()));
+                        results.push(FuelConfigAction::Delete(object_id.to_string()));
                     }
                 }
             }
@@ -215,7 +214,7 @@ impl Processor for EnergyConfigHandler {
 }
 
 #[async_trait]
-impl Handler for EnergyConfigHandler {
+impl Handler for FuelConfigHandler {
     type Store = Db;
     type Batch = Vec<Self::Value>;
 
@@ -228,18 +227,18 @@ impl Handler for EnergyConfigHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::energy_config::dsl::*;
+        use crate::schema::indexer::fuel_config::dsl::*;
 
-        let mut upsert_map: HashMap<String, &StoredEnergyConfig> = HashMap::new();
+        let mut upsert_map: HashMap<String, &StoredFuelConfig> = HashMap::new();
         let mut to_delete = Vec::new();
 
         for action in batch {
             match action {
-                EnergyConfigAction::Register(table) => {
+                FuelConfigAction::Register(table) => {
                     self.ctx.tables.add_table(conn, table).await?;
                 }
-                EnergyConfigAction::Upsert(config) => {
-                    let current = upsert_map.entry(config.assembly_id.clone());
+                FuelConfigAction::Upsert(config) => {
+                    let current = upsert_map.entry(config.type_id.clone());
 
                     match current {
                         Entry::Occupied(mut entry) => {
@@ -252,22 +251,22 @@ impl Handler for EnergyConfigHandler {
                         }
                     }
                 }
-                EnergyConfigAction::Delete(id_str) => to_delete.push(id_str.clone()),
+                FuelConfigAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
+        // Remove an updaes for which deletions exist.
         upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredEnergyConfig> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredFuelConfig> = upsert_map.into_values().collect();
 
         if !final_values.is_empty() {
-            diesel::insert_into(energy_config)
+            diesel::insert_into(fuel_config)
                 .values(final_values)
-                .on_conflict((assembly_id, package_id))
+                .on_conflict((type_id, table_id))
                 .do_update()
                 .set((
-                    energy_cost.eq(excluded(energy_cost)),
+                    efficiency.eq(excluded(efficiency)),
                     entry_object_id.eq(excluded(entry_object_id)),
                     checkpoint_updated.eq(excluded(checkpoint_updated)),
                 ))
@@ -277,7 +276,7 @@ impl Handler for EnergyConfigHandler {
         }
 
         if !to_delete.is_empty() {
-            diesel::delete(energy_config)
+            diesel::delete(fuel_config)
                 .filter(entry_object_id.eq_any(to_delete))
                 .execute(conn)
                 .await?;

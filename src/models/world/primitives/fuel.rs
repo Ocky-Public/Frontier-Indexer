@@ -1,5 +1,11 @@
+pub mod event_fuel;
+pub mod event_fuel_burning_started;
+pub mod event_fuel_burning_stopped;
+pub mod event_fuel_burning_updated;
+pub mod event_fuel_deleted;
+pub mod event_fuel_deposited;
 pub mod event_fuel_effciency_set;
 pub mod event_fuel_efficiency_removed;
+pub mod event_fuel_withdrawn;
 pub mod fuel;
 pub mod fuel_config;
-pub mod fuel_events;

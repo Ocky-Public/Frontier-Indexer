@@ -47,11 +47,15 @@ pub use primitives::energy::energy_production_stopped_handler::*;
 pub use primitives::energy::energy_released_handler::*;
 pub use primitives::energy::energy_reserved_handler::*;
 
+pub use primitives::fuel::fuel_burning_started_handler::*;
+pub use primitives::fuel::fuel_burning_stopped_handler::*;
+pub use primitives::fuel::fuel_burning_updated_handler::*;
 pub use primitives::fuel::fuel_config_handler::*;
+pub use primitives::fuel::fuel_deleted_handler::*;
+pub use primitives::fuel::fuel_deposited_handler::*;
 pub use primitives::fuel::fuel_efficiency_removed_handler::*;
 pub use primitives::fuel::fuel_efficiency_set_handler::*;
-pub use primitives::fuel::fuel_event_handler::*;
-pub use primitives::fuel::fuel_handler::*;
+pub use primitives::fuel::fuel_withdrawn::*;
 
 pub use primitives::inventories::inventory_entry_handlers::*;
 pub use primitives::inventories::inventory_handler::*;

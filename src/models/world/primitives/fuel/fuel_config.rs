@@ -9,35 +9,36 @@ use sui_types::collection_types::Table;
 use sui_types::dynamic_field::Field;
 use sui_types::object::Object;
 
-use crate::schema::indexer::energy_config;
+use crate::schema::indexer::fuel_config;
 
 #[derive(Deserialize)]
-pub struct MoveEnergyConfig {
+pub struct MoveFuelConfig {
     pub id: Address,
-    pub assembly_energy: Table,
+    pub fuel_efficiency: Table,
 }
-#[derive(Insertable, Debug, Clone, FieldCount)]
-#[diesel(table_name = energy_config)]
-pub struct StoredEnergyConfig {
-    pub package_id: String,
-    pub assembly_id: String,
-    pub energy_cost: i64,
+
+#[derive(Deserialize, Insertable, Debug, Clone, FieldCount)]
+#[diesel(table_name = fuel_config)]
+pub struct StoredFuelConfig {
+    pub table_id: String,
+    pub type_id: String,
+    pub efficiency: i64,
     pub entry_object_id: String,
     pub checkpoint_updated: i64,
 }
 
-impl StoredEnergyConfig {
+impl StoredFuelConfig {
     pub fn from_object(obj: &Object, table_id: String, checkpoint_updated: i64) -> Self {
         let move_obj = obj.data.try_as_move().expect("Object is not a Move object");
         let bytes = move_obj.contents();
 
         let entry: Field<u64, u64> =
-            bcs::from_bytes(bytes).expect("Failed to deserialze Energy config object");
+            bcs::from_bytes(bytes).expect("Failed to deserialize Fuel Config object");
 
         Self {
-            package_id: table_id,
-            assembly_id: entry.name.to_string(),
-            energy_cost: entry.value as i64,
+            table_id,
+            type_id: entry.name.to_string(),
+            efficiency: entry.value as i64,
             entry_object_id: obj.id().to_string(),
             checkpoint_updated,
         }

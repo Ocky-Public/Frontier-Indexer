@@ -135,6 +135,127 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.events_fuel_burning_started (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            tenant -> Text,
+            type_id -> Int8,
+            quantity_old -> Int8,
+            quantity_new -> Int8,
+            burning -> Bool,
+        }
+    }
+
+    diesel::table! {
+        indexer.events_fuel_burning_stopped (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            tenant -> Text,
+            type_id -> Int8,
+            quantity_old -> Int8,
+            quantity_new -> Int8,
+            burning -> Bool,
+        }
+    }
+
+    diesel::table! {
+        indexer.events_fuel_burning_updated (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            tenant -> Text,
+            type_id -> Int8,
+            quantity_old -> Int8,
+            quantity_new -> Int8,
+            burning -> Bool,
+        }
+    }
+
+    diesel::table! {
+        indexer.events_fuel_deleted (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            tenant -> Text,
+            type_id -> Int8,
+            quantity_old -> Int8,
+            quantity_new -> Int8,
+            burning -> Bool,
+        }
+    }
+
+    diesel::table! {
+        indexer.events_fuel_deposited (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            tenant -> Text,
+            type_id -> Int8,
+            quantity_old -> Int8,
+            quantity_new -> Int8,
+            burning -> Bool,
+        }
+    }
+
+    diesel::table! {
+        indexer.events_fuel_efficiency_removed (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            type_id -> Int8,
+        }
+    }
+
+    diesel::table! {
+        indexer.events_fuel_efficiency_set (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            type_id -> Int8,
+            efficiency -> Int8,
+        }
+    }
+
+    diesel::table! {
+        indexer.events_fuel_withdrawn (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            tenant -> Text,
+            type_id -> Int8,
+            quantity_old -> Int8,
+            quantity_new -> Int8,
+            burning -> Bool,
+        }
+    }
+
+    diesel::table! {
         indexer.events_location_revealed (event_id, occurred_at) {
             #[max_length = 100]
             event_id -> Varchar,
@@ -200,6 +321,19 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.fuel_config (type_id, table_id) {
+            #[max_length = 66]
+            table_id -> Varchar,
+            #[max_length = 20]
+            type_id -> Varchar,
+            efficiency -> Int8,
+            #[max_length = 66]
+            entry_object_id -> Varchar,
+            checkpoint_updated -> Int8,
+        }
+    }
+
+    diesel::table! {
         indexer.owner_caps (id) {
             #[max_length = 66]
             id -> Varchar,
@@ -241,10 +375,19 @@ pub mod indexer {
         events_energy_production_stopped,
         events_energy_released,
         events_energy_reserved,
+        events_fuel_burning_started,
+        events_fuel_burning_stopped,
+        events_fuel_burning_updated,
+        events_fuel_deleted,
+        events_fuel_deposited,
+        events_fuel_efficiency_removed,
+        events_fuel_efficiency_set,
+        events_fuel_withdrawn,
         events_location_revealed,
         events_owner_cap_created,
         events_owner_cap_transferred,
         events_status_changed,
+        fuel_config,
         owner_caps,
         system_table_registry,
     );

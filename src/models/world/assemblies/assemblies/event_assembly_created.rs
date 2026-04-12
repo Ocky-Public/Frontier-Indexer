@@ -15,20 +15,20 @@ pub struct MoveAssemblyCreated {
     pub assembly_id: Address,
     pub assembly_key: MoveTenantItemId,
     pub owner_cap_id: Address,
-    type_id: u64,
+    pub type_id: u64,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_assembly_created)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredAssemblyCreated {
-    event_id: String,
-    occurred_at: DateTime<Utc>,
-    id: String,
-    item_id: String,
-    tenant: String,
-    type_id: i64,
-    owner_cap_id: String,
+    pub event_id: String,
+    pub occurred_at: DateTime<Utc>,
+    pub id: String,
+    pub item_id: String,
+    pub tenant: String,
+    pub type_id: i64,
+    pub owner_cap_id: String,
 }
 
 impl StoredAssemblyCreated {
