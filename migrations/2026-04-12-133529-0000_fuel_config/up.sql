@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS indexer.fuel_config (
+  table_id            VARCHAR(66)   NOT NULL,
+  type_id             VARCHAR(20)   NOT NULL,
+  efficiency          BIGINT        NOT NULL,
+  entry_object_id     VARCHAR(66)   NOT NULL,
+  checkpoint_updated  BIGINT        NOT NULL,
+  PRIMARY KEY(type_id, table_id)
+);

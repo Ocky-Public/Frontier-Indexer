@@ -219,6 +219,19 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.fuel_config (type_id, table_id) {
+            #[max_length = 66]
+            table_id -> Varchar,
+            #[max_length = 20]
+            type_id -> Varchar,
+            efficiency -> Int8,
+            #[max_length = 66]
+            entry_object_id -> Varchar,
+            checkpoint_updated -> Int8,
+        }
+    }
+
+    diesel::table! {
         indexer.owner_caps (id) {
             #[max_length = 66]
             id -> Varchar,
@@ -266,6 +279,7 @@ pub mod indexer {
         events_owner_cap_created,
         events_owner_cap_transferred,
         events_status_changed,
+        fuel_config,
         owner_caps,
         system_table_registry,
     );
