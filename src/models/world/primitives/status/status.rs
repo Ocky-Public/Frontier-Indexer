@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use strum_macros::{Display, EnumString, AsRefStr};
+use strum_macros::{AsRefStr, Display, EnumString};
 
 #[derive(Deserialize, Debug, Clone, Copy, Display, EnumString, AsRefStr)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

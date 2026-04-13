@@ -7,9 +7,9 @@ use strum_macros::{AsRefStr, Display, EnumString};
 #[repr(u8)]
 pub enum MoveBehaviourChangeReason {
     Unspecified = 0,
-    Entered = 1,       // target entered the proximity of the turret
-    StartedAttack = 2, // target started attacking the base
-    StoppedAttack = 3, // target stopped attacking the base
+    Entered = 1,
+    StartedAttack = 2,
+    StoppedAttack = 3,
 }
 
 #[derive(Deserialize)]
