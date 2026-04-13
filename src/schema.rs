@@ -83,7 +83,8 @@ pub mod indexer {
             tenant -> Text,
             #[max_length = 66]
             owner_address -> Varchar,
-            tribe_id -> Int8,
+            #[max_length = 20]
+            tribe_id -> Varchar,
         }
     }
 
