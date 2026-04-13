@@ -351,6 +351,22 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.events_turret_extension_revoked (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            #[max_length = 66]
+            package_id -> Varchar,
+            module_name -> Text,
+            struct_name -> Text,
+        }
+    }
+
+    diesel::table! {
         indexer.fuel_config (type_id, table_id) {
             #[max_length = 66]
             table_id -> Varchar,
@@ -464,6 +480,7 @@ pub mod indexer {
         events_status_changed,
         events_turret_created,
         events_turret_extension_authorized,
+        events_turret_extension_revoked,
         fuel_config,
         killmails,
         owner_caps,
