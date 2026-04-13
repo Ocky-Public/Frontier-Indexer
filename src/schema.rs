@@ -334,6 +334,21 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.killmails (id, occurred_at) {
+            #[max_length = 66]
+            id -> Varchar,
+            kill_id -> Int8,
+            tenant -> Text,
+            occurred_at -> Timestamptz,
+            solar_system_id -> Int8,
+            loss_type -> Text,
+            killer_id -> Int8,
+            victim_id -> Int8,
+            reporter_id -> Int8,
+        }
+    }
+
+    diesel::table! {
         indexer.owner_caps (id) {
             #[max_length = 66]
             id -> Varchar,
@@ -388,6 +403,7 @@ pub mod indexer {
         events_owner_cap_transferred,
         events_status_changed,
         fuel_config,
+        killmails,
         owner_caps,
         system_table_registry,
     );
