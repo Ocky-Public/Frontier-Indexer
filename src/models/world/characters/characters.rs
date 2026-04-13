@@ -54,7 +54,7 @@ impl StoredCharacter {
         Self {
             id: character.id.to_hex(),
             item_id: character.key.item_id.to_string(),
-            tenant: character.key.tenant.to_string(),
+            tenant: character.key.tenant,
             owner_cap_id: character.owner_cap_id.to_hex(),
             owner_address: character.character_address.to_hex(),
             tribe_id: character.tribe_id as i64,

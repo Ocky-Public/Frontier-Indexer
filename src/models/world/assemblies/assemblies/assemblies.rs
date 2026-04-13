@@ -67,7 +67,7 @@ impl StoredAssembly {
         Self {
             id: assembly.id.to_hex(),
             item_id: assembly.key.item_id.to_string(),
-            tenant: assembly.key.tenant.to_string(),
+            tenant: assembly.key.tenant,
             type_id: assembly.type_id as i64,
             owner_cap_id: assembly.owner_cap_id.to_hex(),
             location,
