@@ -294,9 +294,9 @@ pub mod indexer {
             #[max_length = 66]
             object_id -> Varchar,
             #[max_length = 66]
-            previous_owner -> Varchar,
+            owner_previous -> Varchar,
             #[max_length = 66]
-            owner -> Varchar,
+            owner_new -> Varchar,
         }
     }
 

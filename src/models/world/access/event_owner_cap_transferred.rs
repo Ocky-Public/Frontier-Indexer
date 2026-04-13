@@ -25,8 +25,8 @@ pub struct StoredOwnerCapTransferred {
     pub occurred_at: DateTime<Utc>,
     pub id: String,
     pub object_id: String,
-    pub previous_owner: String,
-    pub owner: String,
+    pub owner_previous: String,
+    pub owner_new: String,
 }
 
 impl StoredOwnerCapTransferred {
@@ -42,8 +42,8 @@ impl StoredOwnerCapTransferred {
             occurred_at,
             id: move_event.owner_cap_id.to_hex(),
             object_id: move_event.authorized_object_id.to_hex(),
-            previous_owner: move_event.previous_owner.to_hex(),
-            owner: move_event.owner.to_hex(),
+            owner_previous: move_event.previous_owner.to_hex(),
+            owner_new: move_event.owner.to_hex(),
         }
     }
 }
