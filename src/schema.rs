@@ -243,7 +243,6 @@ pub mod indexer {
             id -> Varchar,
             #[max_length = 20]
             item_id -> Varchar,
-            tenant -> Text,
             type_id -> Int8,
             quantity_old -> Int8,
             quantity_new -> Int8,
