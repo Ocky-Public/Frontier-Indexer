@@ -44,11 +44,10 @@ pub mod indexer {
     }
 
     diesel::table! {
-        indexer.energy_config (assembly_id, package_id) {
+        indexer.energy_config (type_id, table_id) {
             #[max_length = 66]
-            package_id -> Varchar,
-            #[max_length = 20]
-            assembly_id -> Varchar,
+            table_id -> Varchar,
+            type_id -> Int8,
             energy_cost -> Int8,
             #[max_length = 66]
             entry_object_id -> Varchar,

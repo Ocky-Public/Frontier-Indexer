@@ -19,8 +19,8 @@ pub struct MoveEnergyConfig {
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = energy_config)]
 pub struct StoredEnergyConfig {
-    pub package_id: String,
-    pub assembly_id: String,
+    pub table_id: String,
+    pub type_id: i64,
     pub energy_cost: i64,
     pub entry_object_id: String,
     pub checkpoint_updated: i64,
@@ -35,8 +35,8 @@ impl StoredEnergyConfig {
             bcs::from_bytes(bytes).expect("Failed to deserialze Energy config object");
 
         Self {
-            package_id: table_id,
-            assembly_id: entry.name.to_string(),
+            table_id,
+            type_id: entry.name as i64,
             energy_cost: entry.value as i64,
             entry_object_id: obj.id().to_string(),
             checkpoint_updated,
