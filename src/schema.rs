@@ -318,8 +318,7 @@ pub mod indexer {
         indexer.fuel_config (type_id, table_id) {
             #[max_length = 66]
             table_id -> Varchar,
-            #[max_length = 20]
-            type_id -> Varchar,
+            type_id -> Int8,
             efficiency -> Int8,
             #[max_length = 66]
             entry_object_id -> Varchar,

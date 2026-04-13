@@ -238,7 +238,7 @@ impl Handler for FuelConfigHandler {
                     self.ctx.tables.add_table(conn, table).await?;
                 }
                 FuelConfigAction::Upsert(config) => {
-                    let current = upsert_map.entry(config.type_id.clone());
+                    let current = upsert_map.entry(config.type_id.to_string());
 
                     match current {
                         Entry::Occupied(mut entry) => {
