@@ -11,10 +11,8 @@ pub use access::owner_cap_transferred_handler::*;
 pub use assemblies::assemblies::assembly_created_handler::*;
 pub use assemblies::assemblies::assembly_handler::*;
 
-pub use assemblies::extensions::extension_authorized_handler::*;
-pub use assemblies::extensions::extension_config_frozen_handler::*;
 pub use assemblies::extensions::extension_freeze_handler::*;
-pub use assemblies::extensions::extension_revoked_handler::*;
+pub use assemblies::extensions::extension_frozen_handler::*;
 
 pub use assemblies::gates::gate_config_handler::*;
 pub use assemblies::gates::gate_created_handler::*;
@@ -32,6 +30,8 @@ pub use assemblies::storage_units::storage_unit_created_handler::*;
 pub use assemblies::storage_units::storage_unit_handler::*;
 
 pub use assemblies::turrets::turret_created_handler::*;
+pub use assemblies::turrets::turret_extension_authorized_handler::*;
+pub use assemblies::turrets::turret_extension_revoked_handler::*;
 pub use assemblies::turrets::turret_handler::*;
 
 pub use characters::character_created_handler::*;

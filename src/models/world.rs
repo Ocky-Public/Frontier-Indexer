@@ -11,9 +11,7 @@ pub use access::owner_caps::*;
 pub use assemblies::assemblies::assemblies::*;
 pub use assemblies::assemblies::event_assembly_created::*;
 
-pub use assemblies::extensions::event_extension_authorized::*;
-pub use assemblies::extensions::event_extension_config_forzen::*;
-pub use assemblies::extensions::event_extension_revoked::*;
+pub use assemblies::extensions::event_extension_frozen::*;
 pub use assemblies::extensions::extension_freezes::*;
 
 pub use assemblies::gates::event_gate_created::*;
@@ -31,8 +29,9 @@ pub use assemblies::network_nodes::network_nodes::*;
 pub use assemblies::storage_units::event_storage_unit_created::*;
 pub use assemblies::storage_units::storage_units::*;
 
-pub use assemblies::turrets::event_priority_list_updated::*;
 pub use assemblies::turrets::event_turret_created::*;
+pub use assemblies::turrets::event_turret_extension_authorized::*;
+pub use assemblies::turrets::event_turret_extension_revoked::*;
 pub use assemblies::turrets::turrets::*;
 
 pub use characters::characters::*;
