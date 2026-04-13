@@ -14,15 +14,15 @@ pub enum MoveBehaviourChangeReason {
 
 #[derive(Deserialize)]
 pub struct MoveTargetCandidate {
-    item_id: u64,
-    type_id: u64,
-    group_id: u64,
-    character_id: u32,
-    character_tribe: u32,
-    hp_ratio: u64,
-    shield_ratio: u64,
-    armor_ratio: u64,
-    is_aggressor: bool,
-    priority_weight: u64,
-    behaviour_change: MoveBehaviourChangeReason,
+    pub item_id: u64,
+    pub type_id: u64,
+    pub group_id: u64,
+    pub character_id: u32,
+    pub character_tribe: u32,
+    pub hp_ratio: u64,
+    pub shield_ratio: u64,
+    pub armor_ratio: u64,
+    pub is_aggressor: bool,
+    pub priority_weight: u64,
+    pub behaviour_change: MoveBehaviourChangeReason,
 }

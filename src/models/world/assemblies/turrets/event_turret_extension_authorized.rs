@@ -13,27 +13,27 @@ use crate::schema::indexer::events_turret_extension_authorized;
 
 #[derive(Deserialize)]
 pub struct MoveTurretExtensionAuthorized {
-    assembly_id: Address,
-    assembly_key: MoveTenantItemId,
-    extension_type: MoveTypeName,
-    previous_extension: Option<MoveTypeName>,
-    owner_cap_id: Address,
+    pub assembly_id: Address,
+    pub assembly_key: MoveTenantItemId,
+    pub extension_type: MoveTypeName,
+    pub previous_extension: Option<MoveTypeName>,
+    pub owner_cap_id: Address,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_turret_extension_authorized)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredTurretExtensionAuthorized {
-    event_id: String,
-    occurred_at: DateTime<Utc>,
-    id: String,
-    item_id: String,
-    package_id: String,
-    module_name: String,
-    struct_name: String,
-    package_id_old: Option<String>,
-    module_name_old: Option<String>,
-    struct_name_old: Option<String>,
+    pub event_id: String,
+    pub occurred_at: DateTime<Utc>,
+    pub id: String,
+    pub item_id: String,
+    pub package_id: String,
+    pub module_name: String,
+    pub struct_name: String,
+    pub package_id_old: Option<String>,
+    pub module_name_old: Option<String>,
+    pub struct_name_old: Option<String>,
 }
 
 impl StoredTurretExtensionAuthorized {

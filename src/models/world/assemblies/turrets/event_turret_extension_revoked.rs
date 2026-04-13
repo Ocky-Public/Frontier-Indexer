@@ -13,23 +13,23 @@ use crate::schema::indexer::events_turret_extension_revoked;
 
 #[derive(Deserialize)]
 pub struct MoveTurretExtensionRevoked {
-    assembly_id: Address,
-    assembly_key: MoveTenantItemId,
-    revoked_extension: MoveTypeName,
-    owner_cap_id: Address,
+    pub assembly_id: Address,
+    pub assembly_key: MoveTenantItemId,
+    pub revoked_extension: MoveTypeName,
+    pub owner_cap_id: Address,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_turret_extension_revoked)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredTurretExtensionRevoked {
-    event_id: String,
-    occurred_at: DateTime<Utc>,
-    id: String,
-    item_id: String,
-    package_id: String,
-    module_name: String,
-    struct_name: String,
+    pub event_id: String,
+    pub occurred_at: DateTime<Utc>,
+    pub id: String,
+    pub item_id: String,
+    pub package_id: String,
+    pub module_name: String,
+    pub struct_name: String,
 }
 
 impl StoredTurretExtensionRevoked {
