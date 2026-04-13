@@ -95,7 +95,7 @@ pub mod indexer {
             occurred_at -> Timestamptz,
             #[max_length = 66]
             id -> Varchar,
-            current_energy_production -> Int8,
+            production_current -> Int8,
         }
     }
 
