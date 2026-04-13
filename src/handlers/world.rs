@@ -31,7 +31,6 @@ pub use assemblies::network_nodes::network_node_handler::*;
 pub use assemblies::storage_units::storage_unit_created_handler::*;
 pub use assemblies::storage_units::storage_unit_handler::*;
 
-pub use assemblies::turrets::priority_list_updated_handler::*;
 pub use assemblies::turrets::turret_created_handler::*;
 pub use assemblies::turrets::turret_handler::*;
 
