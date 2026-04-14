@@ -528,6 +528,18 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.gate_config (type_id, table_id) {
+            #[max_length = 66]
+            table_id -> Varchar,
+            type_id -> Int8,
+            distance -> Int8,
+            #[max_length = 66]
+            entry_object_id -> Varchar,
+            checkpoint_updated -> Int8,
+        }
+    }
+
+    diesel::table! {
         indexer.gate_permits (id) {
             #[max_length = 66]
             id -> Varchar,
@@ -712,6 +724,7 @@ pub mod indexer {
         events_turret_extension_authorized,
         events_turret_extension_revoked,
         fuel_config,
+        gate_config,
         gate_permits,
         gates,
         killmails,
