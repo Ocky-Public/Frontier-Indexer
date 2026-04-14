@@ -267,6 +267,26 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.events_gate_extension_authorized (event_id, occurred_at) {
+            #[max_length = 100]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
+            #[max_length = 66]
+            package_id -> Varchar,
+            module_name -> Text,
+            struct_name -> Text,
+            #[max_length = 66]
+            package_id_old -> Nullable<Varchar>,
+            module_name_old -> Nullable<Text>,
+            struct_name_old -> Nullable<Text>,
+        }
+    }
+
+    diesel::table! {
         indexer.events_location_revealed (event_id, occurred_at) {
             #[max_length = 100]
             event_id -> Varchar,
@@ -540,6 +560,7 @@ pub mod indexer {
         events_fuel_efficiency_set,
         events_fuel_withdrawn,
         events_gate_created,
+        events_gate_extension_authorized,
         events_location_revealed,
         events_network_node_created,
         events_owner_cap_created,
