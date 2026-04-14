@@ -45,7 +45,7 @@ pub struct StoredGate {
     pub package_id: Option<String>,
     pub module_name: Option<String>,
     pub struct_name: Option<String>,
-    checkpoint_updated: i64,
+    pub checkpoint_updated: i64,
 }
 
 impl StoredGate {
