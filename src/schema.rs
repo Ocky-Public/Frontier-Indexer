@@ -136,6 +136,16 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.events_extension_frozen (event_id, occurred_at, id) {
+            #[max_length = 66]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 66]
+            id -> Varchar,
+        }
+    }
+
+    diesel::table! {
         indexer.events_fuel_burning_started (event_id, occurred_at) {
             #[max_length = 100]
             event_id -> Varchar,
@@ -700,6 +710,7 @@ pub mod indexer {
         events_energy_production_stopped,
         events_energy_released,
         events_energy_reserved,
+        events_extension_frozen,
         events_fuel_burning_started,
         events_fuel_burning_stopped,
         events_fuel_burning_updated,
