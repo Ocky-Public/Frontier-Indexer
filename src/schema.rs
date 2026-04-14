@@ -394,6 +394,26 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.events_item_burned (event_id, occurred_at) {
+            #[max_length = 66]
+            event_id -> Varchar,
+            occurred_at -> Timestamptz,
+            #[max_length = 20]
+            item_id -> Varchar,
+            type_id -> Int8,
+            quantity -> Int8,
+            #[max_length = 66]
+            assembly_id -> Varchar,
+            #[max_length = 20]
+            assembly_item_id -> Varchar,
+            #[max_length = 66]
+            character_id -> Varchar,
+            #[max_length = 20]
+            character_item_id -> Varchar,
+        }
+    }
+
+    diesel::table! {
         indexer.events_location_revealed (event_id, occurred_at) {
             #[max_length = 100]
             event_id -> Varchar,
@@ -726,6 +746,7 @@ pub mod indexer {
         events_gate_linked,
         events_gate_permit_issued,
         events_gate_unlinked,
+        events_item_burned,
         events_location_revealed,
         events_network_node_created,
         events_owner_cap_created,
