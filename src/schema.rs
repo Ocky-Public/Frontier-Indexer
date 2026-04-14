@@ -528,6 +528,18 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.gate_permits (id) {
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 66]
+            character_id -> Varchar,
+            #[max_length = 66]
+            link_hash -> Varchar,
+            expires_at -> Timestamptz,
+        }
+    }
+
+    diesel::table! {
         indexer.killmails (id, occurred_at) {
             #[max_length = 66]
             id -> Varchar,
@@ -672,6 +684,7 @@ pub mod indexer {
         events_turret_extension_authorized,
         events_turret_extension_revoked,
         fuel_config,
+        gate_permits,
         killmails,
         network_nodes,
         owner_caps,
