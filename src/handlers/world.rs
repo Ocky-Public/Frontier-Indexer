@@ -16,6 +16,8 @@ pub use assemblies::extensions::extension_frozen_handler::*;
 
 pub use assemblies::gates::gate_config_handler::*;
 pub use assemblies::gates::gate_created_handler::*;
+pub use assemblies::gates::gate_extension_authorized_handler::*;
+pub use assemblies::gates::gate_extension_revoked_handler::*;
 pub use assemblies::gates::gate_handler::*;
 pub use assemblies::gates::gate_jump_handler::*;
 pub use assemblies::gates::gate_linked_handler::*;

@@ -1,5 +1,7 @@
 pub mod gate_config_handler;
 pub mod gate_created_handler;
+pub mod gate_extension_authorized_handler;
+pub mod gate_extension_revoked_handler;
 pub mod gate_handler;
 pub mod gate_jump_handler;
 pub mod gate_linked_handler;
