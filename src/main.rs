@@ -235,6 +235,10 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::AssemblyCreatedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::AssemblyHandler::new(&context), sequential.clone()).await?;
 
+                // Network Nodes
+                indexer.sequential_pipeline(world::NetworkNodeCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::NetworkNodeHandler::new(&context), sequential.clone()).await?;
+
                 // Turrets
                 indexer.sequential_pipeline(world::TurretCreatedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::TurretExtensionAuthorizedHandler::new(&context), sequential.clone()).await?;
