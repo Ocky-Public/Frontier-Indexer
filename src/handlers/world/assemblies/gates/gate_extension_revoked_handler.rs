@@ -33,7 +33,7 @@ impl GateExtensionRevokedHandler {
 
 #[async_trait]
 impl Processor for GateExtensionRevokedHandler {
-    const NAME: &'static str = "gate_extension_authorized";
+    const NAME: &'static str = "gate_extension_revoked";
     type Value = StoredGateExtensionRevoked;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {

@@ -33,7 +33,7 @@ impl GateJumpedHanlder {
 
 #[async_trait]
 impl Processor for GateJumpedHanlder {
-    const NAME: &'static str = "turret_extension_authorized";
+    const NAME: &'static str = "gate_jumped";
     type Value = StoredGateJumped;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
