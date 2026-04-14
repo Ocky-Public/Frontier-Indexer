@@ -29,6 +29,8 @@ pub use assemblies::network_nodes::network_node_created_handler::*;
 pub use assemblies::network_nodes::network_node_handler::*;
 
 pub use assemblies::storage_units::storage_unit_created_handler::*;
+pub use assemblies::storage_units::storage_unit_extension_authorized_handler::*;
+pub use assemblies::storage_units::storage_unit_extension_revoked_handler::*;
 pub use assemblies::storage_units::storage_unit_handler::*;
 
 pub use assemblies::turrets::turret_created_handler::*;
