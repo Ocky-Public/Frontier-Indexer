@@ -8,7 +8,7 @@ use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_gate_jumped;
+use crate::schema::indexer::events_gate_linked;
 
 #[derive(Deserialize)]
 pub struct MoveGateLinked {
@@ -19,7 +19,7 @@ pub struct MoveGateLinked {
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
-#[diesel(table_name = events_gate_jumped)]
+#[diesel(table_name = events_gate_linked)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredGateLinked {
     pub event_id: String,
