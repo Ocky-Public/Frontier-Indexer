@@ -308,9 +308,9 @@ pub mod indexer {
             event_id -> Varchar,
             occurred_at -> Timestamptz,
             #[max_length = 66]
-            id -> Varchar,
+            character_id -> Varchar,
             #[max_length = 20]
-            item_id -> Varchar,
+            character_item_id -> Varchar,
             #[max_length = 66]
             departure_id -> Varchar,
             #[max_length = 20]

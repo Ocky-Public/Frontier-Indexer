@@ -26,8 +26,8 @@ pub struct MoveGateJumped {
 pub struct StoredGateJumped {
     pub event_id: String,
     pub occurred_at: DateTime<Utc>,
-    pub id: String,
-    pub item_id: String,
+    pub character_id: String,
+    pub character_item_id: String,
     pub departure_id: String,
     pub departure_item_id: String,
     pub destination_id: String,
@@ -45,8 +45,8 @@ impl StoredGateJumped {
         Self {
             event_id: meta.event_digest(),
             occurred_at,
-            id: move_event.character_id.to_hex(),
-            item_id: move_event.character_key.item_id.to_string(),
+            character_id: move_event.character_id.to_hex(),
+            character_item_id: move_event.character_key.item_id.to_string(),
             departure_id: move_event.source_gate_id.to_hex(),
             departure_item_id: move_event.source_gate_key.item_id.to_string(),
             destination_id: move_event.destination_gate_id.to_hex(),
