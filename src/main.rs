@@ -238,6 +238,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
                 // Turrets
                 indexer.sequential_pipeline(world::TurretCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::TurretHandler::new(&context), sequential.clone()).await?;
 
                 // Chracters
                 indexer.sequential_pipeline(world::CharacterCreatedHandler::new(&context), sequential.clone()).await?;
