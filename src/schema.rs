@@ -446,10 +446,6 @@ pub mod indexer {
             assembly_id -> Varchar,
             #[max_length = 20]
             assembly_item_id -> Varchar,
-            #[max_length = 66]
-            character_id -> Varchar,
-            #[max_length = 20]
-            character_item_id -> Varchar,
         }
     }
 
