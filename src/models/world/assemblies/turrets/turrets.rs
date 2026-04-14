@@ -15,15 +15,15 @@ use crate::schema::indexer::turrets;
 
 #[derive(Deserialize)]
 pub struct MoveTurret {
-    id: Address,
-    key: MoveTenantItemId,
-    owner_cap_id: Address,
-    type_id: u64,
-    status: MoveAssemblyStatus,
-    location: MoveLocation,
-    energy_source_id: Option<Address>,
-    metadata: Option<MoveMetadata>,
-    extension: Option<MoveTypeName>,
+    pub id: Address,
+    pub key: MoveTenantItemId,
+    pub owner_cap_id: Address,
+    pub type_id: u64,
+    pub status: MoveAssemblyStatus,
+    pub location: MoveLocation,
+    pub energy_source_id: Option<Address>,
+    pub metadata: Option<MoveMetadata>,
+    pub extension: Option<MoveTypeName>,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]

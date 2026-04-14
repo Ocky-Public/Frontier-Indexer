@@ -20,28 +20,28 @@ pub enum MoveLossType {
 
 #[derive(Deserialize)]
 pub struct MoveKillmail {
-    id: Address,
-    key: MoveTenantItemId,
-    killer_id: MoveTenantItemId,
-    victim_id: MoveTenantItemId,
-    reported_by_character_id: MoveTenantItemId,
-    kill_timestamp: u64,
-    loss_type: MoveLossType,
-    solar_system_id: MoveTenantItemId,
+    pub id: Address,
+    pub key: MoveTenantItemId,
+    pub killer_id: MoveTenantItemId,
+    pub victim_id: MoveTenantItemId,
+    pub reported_by_character_id: MoveTenantItemId,
+    pub kill_timestamp: u64,
+    pub loss_type: MoveLossType,
+    pub solar_system_id: MoveTenantItemId,
 }
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = killmails)]
 pub struct StoredKillmail {
-    id: String,
-    kill_id: String,
-    tenant: String,
-    occurred_at: DateTime<Utc>,
-    solar_system_id: String,
-    loss_type: String,
-    killer_id: String,
-    victim_id: String,
-    reporter_id: String,
+    pub id: String,
+    pub kill_id: String,
+    pub tenant: String,
+    pub occurred_at: DateTime<Utc>,
+    pub solar_system_id: String,
+    pub loss_type: String,
+    pub killer_id: String,
+    pub victim_id: String,
+    pub reporter_id: String,
 }
 
 impl StoredKillmail {
