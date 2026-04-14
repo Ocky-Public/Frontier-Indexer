@@ -64,15 +64,19 @@ impl Processor for TurretHandler {
 
                 match change.id_operation {
                     IDOperation::Created | IDOperation::None => {
-                        if let Some(version) = change.output_version {
-                            let key = ObjectKey(object_id, version);
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
 
-                            if let Some(obj) = checkpoint.object_set.get(&key) {
-                                if self.is_turret(obj) {
-                                    let turret = StoredTurret::from_object(obj, checkpoint_updated);
-                                    results.push(TurretAction::Upsert(turret));
-                                }
-                            }
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_turret(obj) {
+                            let turret = StoredTurret::from_object(obj, checkpoint_updated);
+                            results.push(TurretAction::Upsert(turret));
                         }
                     }
                     IDOperation::Deleted => {
