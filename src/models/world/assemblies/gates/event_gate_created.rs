@@ -37,7 +37,7 @@ pub struct StoredGateCreated {
 impl StoredGateCreated {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveGateCreated =
-            bcs::from_bytes(&event.contents).expect("Failed to deserialize Turret Created event");
+            bcs::from_bytes(&event.contents).expect("Failed to deserialize Gate Created event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
             .expect("Failed to parse checkpoint timestamp into DateTime");
