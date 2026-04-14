@@ -8,6 +8,7 @@ use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveTenantItemId;
+use crate::models::MoveTypeName;
 use crate::schema::indexer::events_gate_permit_issued;
 
 #[derive(Deserialize)]
@@ -19,7 +20,7 @@ pub struct MoveGatePermitIssued {
     pub destination_gate_key: MoveTenantItemId,
     pub character_id: Address,
     pub character_key: MoveTenantItemId,
-    pub route_hash: vector<u8>,
+    pub route_hash: Vec<u8>,
     pub expires_at_timestamp_ms: u64,
     pub extension_type: MoveTypeName,
 }
@@ -46,8 +47,8 @@ pub struct StoredGatePermitIssued {
 
 impl StoredGatePermitIssued {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
-        let move_event: MoveGatePermitIssued =
-            bcs::from_bytes(&event.contents).expect("Failed to deserialze Gate Permit Issued event");
+        let move_event: MoveGatePermitIssued = bcs::from_bytes(&event.contents)
+            .expect("Failed to deserialze Gate Permit Issued event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
             .expect("Failed ot parse checkpoint timestamp into DateTime");
