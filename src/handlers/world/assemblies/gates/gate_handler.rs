@@ -12,6 +12,7 @@ use diesel_async::RunQueryDsl;
 use sui_pg_db::FieldCount;
 use sui_types::effects::{IDOperation, TransactionEffectsAPI};
 use sui_types::object::Object;
+use sui_types::object::Owner;
 use sui_types::storage::ObjectKey;
 
 use sui_indexer_alt_framework::pipeline::sequential::Handler;
@@ -19,6 +20,7 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::models::world::StoredExtensionFreeze;
 use crate::models::world::StoredGate;
 
 use crate::AppContext;
@@ -37,11 +39,56 @@ impl GateHandler {
         let struct_name = "Gate";
         self.ctx.is_world_object(obj, module_name, struct_name)
     }
+
+    fn is_gate_extension_freeze(
+        &self,
+        obj: &Object,
+        gates: &HashMap<String, Arc<StoredGate>>,
+    ) -> Option<Arc<StoredGate>> {
+        let key_module = "extension_freeze";
+        let key_struct = "ExtensionFrozenKey";
+
+        let value_module = "extension_freeze";
+        let value_struct = "ExtensionFrozen";
+
+        let Some(move_type) = obj.type_() else {
+            return None;
+        };
+
+        if !move_type.is_dynamic_field() || move_type.type_params().len() != 2 {
+            return None;
+        }
+
+        if !self
+            .ctx
+            .is_world_struct(move_type.type_params()[0].as_ref(), key_module, key_struct)
+        {
+            return None;
+        }
+
+        if !self.ctx.is_world_struct(
+            move_type.type_params()[1].as_ref(),
+            value_module,
+            value_struct,
+        ) {
+            return None;
+        }
+
+        let Owner::ObjectOwner(owner_str) = obj.owner else {
+            return None;
+        };
+
+        let owner_id = owner_str.to_string();
+
+        // CHeck the entry again gates in the same checkpoint.
+        gates.get(&owner_id).cloned()
+    }
 }
 
 #[derive(FieldCount)]
 pub enum GateAction {
     Upsert(StoredGate),
+    Freeze(StoredExtensionFreeze),
     Delete(String),
 }
 
@@ -53,6 +100,8 @@ impl Processor for GateHandler {
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
         let mut results = vec![];
         let checkpoint_updated = checkpoint.summary.sequence_number as i64;
+
+        let mut gates = HashMap::new();
 
         for tx in &checkpoint.transactions {
             if !self.ctx.is_indexed_tx(tx, &checkpoint.object_set) {
@@ -75,8 +124,14 @@ impl Processor for GateHandler {
                         };
 
                         if self.is_gate(obj) {
-                            let turret = StoredGate::from_object(obj, checkpoint_updated);
-                            results.push(GateAction::Upsert(turret));
+                            let gate = StoredGate::from_object(obj, checkpoint_updated);
+                            gates.insert(gate.id.clone(), Arc::new(gate.clone()));
+                            results.push(GateAction::Upsert(gate));
+                        }
+
+                        if let Some(gate) = self.is_gate_extension_freeze(obj, &gates) {
+                            let freeze = StoredExtensionFreeze::from_object(obj, gate);
+                            results.push(GateAction::Freeze(freeze));
                         }
                     }
                     IDOperation::Deleted => {
@@ -104,9 +159,8 @@ impl Handler for GateHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::gates::dsl::*;
-
         let mut upsert_map: HashMap<String, &StoredGate> = HashMap::new();
+        let mut to_freeze = Vec::new();
         let mut to_delete = Vec::new();
 
         for action in batch {
@@ -125,6 +179,7 @@ impl Handler for GateHandler {
                         }
                     }
                 }
+                GateAction::Freeze(freeze) => to_freeze.push(freeze),
                 GateAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
@@ -135,6 +190,7 @@ impl Handler for GateHandler {
         let final_values: Vec<&StoredGate> = upsert_map.into_values().collect();
 
         if !final_values.is_empty() {
+            use crate::schema::indexer::gates::dsl::*;
             diesel::insert_into(gates)
                 .values(final_values)
                 .on_conflict(id)
@@ -161,9 +217,26 @@ impl Handler for GateHandler {
                 .await?;
         }
 
+        if !to_freeze.is_empty() {
+            use crate::schema::indexer::extension_freezes::dsl::*;
+            diesel::insert_into(extension_freezes)
+                .values(to_freeze)
+                .on_conflict(id)
+                .do_nothing()
+                .execute(conn)
+                .await?;
+        }
+
         if !to_delete.is_empty() {
-            diesel::delete(gates)
-                .filter(id.eq_any(to_delete))
+            use crate::schema::indexer::{extension_freezes, gates};
+
+            diesel::delete(gates::dsl::gates)
+                .filter(gates::dsl::id.eq_any(to_delete.clone()))
+                .execute(conn)
+                .await?;
+
+            diesel::delete(extension_freezes::dsl::extension_freezes)
+                .filter(extension_freezes::dsl::id.eq_any(to_delete))
                 .execute(conn)
                 .await?;
         }
