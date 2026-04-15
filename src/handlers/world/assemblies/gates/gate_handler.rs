@@ -80,7 +80,6 @@ impl GateHandler {
 
         let owner_id = owner_str.to_string();
 
-        // CHeck the entry again gates in the same checkpoint.
         gates.get(&owner_id).cloned()
     }
 }
@@ -191,6 +190,7 @@ impl Handler for GateHandler {
 
         if !final_values.is_empty() {
             use crate::schema::indexer::gates::dsl::*;
+
             diesel::insert_into(gates)
                 .values(final_values)
                 .on_conflict(id)
@@ -219,6 +219,7 @@ impl Handler for GateHandler {
 
         if !to_freeze.is_empty() {
             use crate::schema::indexer::extension_freezes::dsl::*;
+            
             diesel::insert_into(extension_freezes)
                 .values(to_freeze)
                 .on_conflict(id)
