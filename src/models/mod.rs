@@ -30,7 +30,7 @@ impl MoveTypeName {
     }
 }
 
-trait Freezable {
+pub trait Freezable {
     fn id(&self) -> String;
 
     fn package_id(&self) -> String;
