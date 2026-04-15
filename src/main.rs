@@ -270,6 +270,9 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::CharacterCreatedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::CharacterHandler::new(&context), sequential.clone()).await?;
 
+                // Killmails
+                indexer.sequential_pipeline(world::KillmailHandler::new(&context), sequential.clone()).await?;
+
                 // Energy
                 indexer.sequential_pipeline(world::EnergyConfigHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::EnergyProductionStartedHandler::new(&context), sequential.clone()).await?;
