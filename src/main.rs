@@ -16,9 +16,11 @@ use sui_indexer_alt_metrics::db::DbConnectionStatsCollector;
 use sui_indexer_alt_metrics::{MetricsArgs, MetricsService};
 use sui_pg_db::{Db, DbArgs};
 
-use indexer::models::system::table_registry::TableRegistry;
-use indexer::{handlers::*, AppContext};
-use indexer::{AppEnv, TESTNET_REMOTE_STORE_URL};
+use indexer::handlers::*;
+use indexer::models::system::FuelRegistry;
+use indexer::models::system::TableRegistry;
+use indexer::TESTNET_REMOTE_STORE_URL;
+use indexer::{AppContext, AppEnv};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
@@ -195,8 +197,9 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut conn = store.connect().await?;
     let table_registry = TableRegistry::load_from_db(&mut conn).await;
+    let fuel_registry = FuelRegistry::load_from_db(&mut conn).await;
 
-    let context = AppContext::new(env, table_registry);
+    let context = AppContext::new(env, table_registry, fuel_registry);
 
     registry.register(Box::new(DbConnectionStatsCollector::new(
         Some("frontier_indexer_db"),

@@ -17,7 +17,7 @@ pub struct MoveFuelConfig {
     pub fuel_efficiency: Table,
 }
 
-#[derive(Deserialize, Insertable, Debug, Clone, FieldCount)]
+#[derive(Deserialize, Insertable, Queryable, Selectable, Debug, Clone, FieldCount)]
 #[diesel(table_name = fuel_config)]
 pub struct StoredFuelConfig {
     pub table_id: String,

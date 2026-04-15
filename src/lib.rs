@@ -13,7 +13,8 @@ use sui_types::object::Object;
 use sui_types::transaction::Command;
 use sui_types::transaction::TransactionDataAPI;
 
-use crate::models::system::table_registry::TableRegistry;
+use crate::models::system::FuelRegistry;
+use crate::models::system::TableRegistry;
 
 pub mod handlers;
 pub mod models;
@@ -221,13 +222,14 @@ impl AppEnv {
 pub struct AppContext {
     pub env: AppEnv,
     pub tables: Arc<TableRegistry>,
+    pub fuels: Arc<FuelRegistry>,
 
     pub app_packages: Arc<HashSet<AccountAddress>>,
     pub world_packages: Arc<HashSet<AccountAddress>>,
 }
 
 impl AppContext {
-    pub fn new(env: AppEnv, tables: TableRegistry) -> Self {
+    pub fn new(env: AppEnv, tables: TableRegistry, fuels: FuelRegistry) -> Self {
         let app_packages = Self::get_app_package_strings(env)
             .iter()
             .filter_map(|s| AccountAddress::from_str(s).ok())
@@ -241,6 +243,7 @@ impl AppContext {
         Self {
             env,
             tables: Arc::new(tables),
+            fuels: Arc::new(fuels),
             app_packages: Arc::new(app_packages),
             world_packages: Arc::new(world_packages),
         }

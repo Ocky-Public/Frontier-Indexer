@@ -14,6 +14,8 @@ use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
 use crate::schema::indexer::network_nodes;
 
+use crate::AppContext;
+
 #[derive(Deserialize)]
 pub struct MoveNetworkNode {
     pub id: Address,
@@ -49,6 +51,7 @@ pub struct StoredNetworkNode {
     pub burn_updated: DateTime<Utc>,
     pub burn_elapsed: i64,
     pub fuel_capacity: i64,
+    pub fuel_duration: i64,
     pub fuel_quantity: i64,
     pub fuel_type: Option<i64>,
     pub fuel_volume: Option<i64>,
@@ -59,7 +62,7 @@ pub struct StoredNetworkNode {
 }
 
 impl StoredNetworkNode {
-    pub fn from_object(obj: &Object, checkpoint_updated: i64) -> Self {
+    pub fn from_object(ctx: &AppContext, obj: &Object, checkpoint_updated: i64) -> Self {
         let move_obj = obj.data.try_as_move().expect("Object is not a Move object");
         let bytes = move_obj.contents();
 
@@ -82,6 +85,46 @@ impl StoredNetworkNode {
 
         let burn_updated = DateTime::from_timestamp(network_node.fuel.last_updated as i64, 0)
             .expect("Failed to parse burn updated timestamp into DateTime");
+
+        let fuel_duration: i64 = match network_node.fuel.type_id {
+            Some(type_id) => {
+                let stored = network_node.fuel.quantity as i64;
+
+                let burn_time = network_node.fuel.burn_rate_in_ms as i64;
+
+                // let efficiency = Look up from the efficiency table else 10.
+                let efficiency = ctx.fuels.get_value(&(type_id as i64));
+
+                let burn_start_time = network_node.fuel.burn_start_time as i64;
+
+                let updated_at = network_node.fuel.last_updated as i64;
+
+                let elapsed_time_ms = if updated_at > burn_start_time {
+                    updated_at - burn_start_time
+                } else {
+                    0
+                };
+
+                let previous_cycle_elapsed_time =
+                    network_node.fuel.previous_cycle_elapsed_time as i64;
+
+                let mut remaining_fuel = 0;
+
+                if network_node.fuel.is_burning {
+                    if elapsed_time_ms > 0 {
+                        remaining_fuel = ((burn_time * efficiency) / 100) - elapsed_time_ms;
+                    }
+                } else {
+                    if previous_cycle_elapsed_time > 0 {
+                        remaining_fuel =
+                            ((burn_time * efficiency) / 100) - previous_cycle_elapsed_time;
+                    }
+                }
+
+                ((stored * burn_time * efficiency) / 100) + remaining_fuel
+            }
+            None => 0,
+        };
 
         let fuel_type = match network_node.fuel.type_id {
             Some(type_id) => Some(type_id as i64),
@@ -121,6 +164,7 @@ impl StoredNetworkNode {
             burn_updated,
             burn_elapsed: network_node.fuel.previous_cycle_elapsed_time as i64,
             fuel_capacity: network_node.fuel.max_capacity as i64,
+            fuel_duration,
             fuel_quantity: network_node.fuel.quantity as i64,
             fuel_type,
             fuel_volume,

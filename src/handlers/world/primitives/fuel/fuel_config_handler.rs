@@ -240,7 +240,7 @@ impl Handler for FuelConfigHandler {
 
         if !final_values.is_empty() {
             diesel::insert_into(fuel_config)
-                .values(final_values)
+                .values(final_values.clone())
                 .on_conflict((type_id, table_id))
                 .do_update()
                 .set((
@@ -251,6 +251,10 @@ impl Handler for FuelConfigHandler {
                 .filter(checkpoint_updated.lt(excluded(checkpoint_updated)))
                 .execute(conn)
                 .await?;
+
+            for record in final_values {
+                self.ctx.fuels.add_fuel(record);
+            }
         }
 
         if !to_delete.is_empty() {

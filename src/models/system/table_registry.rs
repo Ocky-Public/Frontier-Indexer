@@ -31,7 +31,6 @@ impl TableRegistry {
     pub async fn load_from_db(conn: &mut Connection<'_>) -> Self {
         use crate::schema::indexer::system_table_registry::dsl::*;
 
-        // Inside your async function
         let records = system_table_registry
             .load::<StoredTableRecord>(conn)
             .await
@@ -89,33 +88,5 @@ impl TableRegistry {
     pub fn contains(&self, entry_owner_id: &str) -> bool {
         let cache = self.cache.read().unwrap();
         cache.contains_key(entry_owner_id)
-    }
-
-    pub fn belongs_to_type(
-        &self,
-        entry_owner_id: &str,
-        package_id: &str,
-        module_name: &str,
-        struct_name: &str,
-    ) -> bool {
-        let cache = self.cache.read().unwrap();
-
-        if let Some(record) = cache.get(entry_owner_id) {
-            return record.package_id == package_id
-                && record.module_name == module_name
-                && record.struct_name == struct_name;
-        }
-
-        false
-    }
-
-    pub fn belongs_to_parent(&self, entry_owner_id: &str, parent_id: &str) -> bool {
-        let cache = self.cache.read().unwrap();
-
-        if let Some(record) = cache.get(entry_owner_id) {
-            return record.parent_id == parent_id;
-        }
-
-        false
     }
 }

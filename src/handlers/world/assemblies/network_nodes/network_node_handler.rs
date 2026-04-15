@@ -69,8 +69,11 @@ impl Processor for NetworkNodeHandler {
 
                             if let Some(obj) = checkpoint.object_set.get(&key) {
                                 if self.is_network_node(obj) {
-                                    let turret =
-                                        StoredNetworkNode::from_object(obj, checkpoint_updated);
+                                    let turret = StoredNetworkNode::from_object(
+                                        &self.ctx,
+                                        obj,
+                                        checkpoint_updated,
+                                    );
                                     results.push(NetworkNodeAction::Upsert(turret));
                                 }
                             }
