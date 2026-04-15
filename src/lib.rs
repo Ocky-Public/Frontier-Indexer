@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
+use sui_types::TypeTag;
 use url::Url;
 
 use move_core_types::account_address::AccountAddress;
@@ -341,6 +342,22 @@ impl AppContext {
         }
 
         self.world_packages.contains(&tag.address)
+    }
+
+    pub fn is_world_struct(&self, tag: &TypeTag, module_name: &str, struct_name: &str) -> bool {
+        let TypeTag::Struct(s_tag) = tag else {
+            return false;
+        };
+
+        if s_tag.module.as_str() != module_name {
+            return false;
+        }
+
+        if s_tag.name.as_str() != struct_name {
+            return false;
+        }
+
+        self.world_packages.contains(&s_tag.address)
     }
 
     fn get_app_package_strings(env: AppEnv) -> Vec<&'static str> {
