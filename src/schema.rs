@@ -674,6 +674,19 @@ pub mod indexer {
     }
 
     diesel::table! {
+        indexer.extension_freezes (id) {
+            #[max_length = 66]
+            id -> Varchar,
+            #[max_length = 66]
+            owner_id -> Varchar,
+            #[max_length = 66]
+            package_id -> Varchar,
+            module_name -> Text,
+            struct_name -> Text,
+        }
+    }
+
+    diesel::table! {
         indexer.fuel_config (type_id, table_id) {
             #[max_length = 66]
             table_id -> Varchar,
@@ -918,6 +931,7 @@ pub mod indexer {
         events_turret_created,
         events_turret_extension_authorized,
         events_turret_extension_revoked,
+        extension_freezes,
         fuel_config,
         gate_config,
         gate_permits,
