@@ -1,6 +1,6 @@
-use serde::Deserialize;
-
 use diesel::prelude::*;
+use serde::Deserialize;
+use std::sync::Arc;
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_types::object::Object;
@@ -19,7 +19,7 @@ pub struct StoredExtensionFreeze {
 }
 
 impl StoredExtensionFreeze {
-    pub fn from_object<T: Freezable>(obj: &Object, parent: &T) -> Self {
+    pub fn from_object<T: Freezable>(obj: &Object, parent: Arc<T>) -> Self {
         Self {
             id: obj.id().to_canonical_string(true),
             owner_id: parent.id(),
