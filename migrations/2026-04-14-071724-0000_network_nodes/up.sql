@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS indexer.network_nodes (
   burn_updated          TIMESTAMPTZ   NOT NULL,
   burn_elapsed          BIGINT        NOT NULL,
   fuel_capacity         BIGINT        NOT NULL,
+  fuel_duration         BIGINT        NOT NULL,
   fuel_quantity         BIGINT        NOT NULL,
   fuel_type             BIGINT,
   fuel_volume           BIGINT,

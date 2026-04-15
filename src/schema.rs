@@ -780,6 +780,7 @@ pub mod indexer {
             burn_updated -> Timestamptz,
             burn_elapsed -> Int8,
             fuel_capacity -> Int8,
+            fuel_duration -> Int8,
             fuel_quantity -> Int8,
             fuel_type -> Nullable<Int8>,
             fuel_volume -> Nullable<Int8>,
