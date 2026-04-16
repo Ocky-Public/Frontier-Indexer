@@ -23,7 +23,7 @@ use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
 use crate::models::system::StoredTableRecord;
-use crate::models::world::MoveFuelConfig;
+use crate::models::world::MoveGateConfig;
 use crate::models::world::StoredGateConfig;
 use crate::AppContext;
 
@@ -144,8 +144,8 @@ impl Processor for GateConfigHandler {
                                 obj.data.try_as_move().expect("Object is not a Move object");
                             let bytes = move_obj.contents();
 
-                            let fuel_config: MoveFuelConfig = bcs::from_bytes(bytes)
-                                .expect("Failed to deserialize GateConfig object");
+                            let gate_config: MoveGateConfig = bcs::from_bytes(bytes)
+                                .expect("Failed to deserialize Gate Config object");
 
                             let move_type = move_obj.type_();
 
@@ -153,11 +153,11 @@ impl Processor for GateConfigHandler {
                                 .other()
                                 .expect("Failed to get appropriate move type for GateConfig");
 
-                            let table_id = fuel_config.fuel_efficiency.id.to_canonical_string(true);
+                            let table_id = gate_config.fuel_efficiency.id.to_canonical_string(true);
 
                             let table_record = StoredTableRecord {
                                 table_id: table_id.clone(),
-                                parent_id: fuel_config.id.to_hex(),
+                                parent_id: gate_config.id.to_hex(),
                                 package_id: tag.address.to_canonical_string(true),
                                 module_name: tag.module.to_string(),
                                 struct_name: tag.name.to_string(),
