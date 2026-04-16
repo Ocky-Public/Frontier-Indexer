@@ -33,7 +33,7 @@ impl StorageUnitExtensionRevokedHandler {
 
 #[async_trait]
 impl Processor for StorageUnitExtensionRevokedHandler {
-    const NAME: &'static str = "storage_unit_extension_authorized";
+    const NAME: &'static str = "storage_unit_extension_revoked";
     type Value = StoredStorageUnitExtensionRevoked;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
