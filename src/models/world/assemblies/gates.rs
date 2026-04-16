@@ -1,8 +1,10 @@
 pub mod event_gate_created;
-pub mod event_gate_jump;
+pub mod event_gate_extension_authorized;
+pub mod event_gate_extension_revoked;
+pub mod event_gate_jumped;
 pub mod event_gate_linked;
+pub mod event_gate_permit_issued;
 pub mod event_gate_unlinked;
-pub mod event_jump_permit_issued;
 pub mod gate_config;
 pub mod gates;
-pub mod jump_permits;
+pub mod gate_permits;

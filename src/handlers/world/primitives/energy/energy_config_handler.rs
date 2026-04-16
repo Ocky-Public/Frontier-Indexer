@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use move_core_types::account_address::AccountAddress;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -10,6 +10,7 @@ use diesel::query_dsl::methods::FilterDsl;
 use diesel::upsert::excluded;
 use diesel_async::RunQueryDsl;
 
+use sui_pg_db::FieldCount;
 use sui_types::effects::{IDOperation, TransactionEffectsAPI};
 use sui_types::object::Object;
 use sui_types::object::Owner;
@@ -21,7 +22,6 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
-use crate::handlers::is_indexed_tx;
 use crate::models::system::StoredTableRecord;
 use crate::models::world::MoveEnergyConfig;
 use crate::models::world::StoredEnergyConfig;
@@ -29,40 +29,17 @@ use crate::AppContext;
 
 pub struct EnergyConfigHandler {
     ctx: AppContext,
-    package_set: HashSet<AccountAddress>,
 }
 
 impl EnergyConfigHandler {
     pub fn new(ctx: &AppContext) -> Self {
-        let package_set: HashSet<AccountAddress> = ctx
-            .get_world_package_strings()
-            .iter()
-            .filter_map(|s| AccountAddress::from_str(s).ok())
-            .collect();
-
-        Self {
-            ctx: ctx.clone(),
-            package_set,
-        }
+        Self { ctx: ctx.clone() }
     }
 
     fn is_energy_config(&self, obj: &Object) -> bool {
         let module_name = "energy";
         let struct_name = "EnergyConfig";
-
-        let Some(move_type) = obj.type_() else {
-            return false;
-        };
-
-        let Some(tag) = move_type.other() else {
-            return false;
-        };
-
-        if !self.package_set.contains(&tag.address) {
-            return false;
-        }
-
-        tag.module.as_str() == module_name && tag.name.as_str() == struct_name
+        self.ctx.is_world_object(obj, module_name, struct_name)
     }
 
     fn is_energy_config_entry(
@@ -77,7 +54,7 @@ impl EnergyConfigHandler {
             return None;
         };
 
-        if !move_type.is_dynamic_field() || move_type.type_params().len() <= 1 {
+        if !move_type.is_dynamic_field() || move_type.type_params().len() != 2 {
             return None;
         }
 
@@ -116,7 +93,7 @@ impl EnergyConfigHandler {
             return None;
         }
 
-        if !self.package_set.contains(&package_id) {
+        if !self.ctx.world_packages.contains(&package_id) {
             return None;
         }
 
@@ -124,6 +101,7 @@ impl EnergyConfigHandler {
     }
 }
 
+#[derive(FieldCount)]
 pub enum EnergyConfigAction {
     Register(StoredTableRecord),
     Upsert(StoredEnergyConfig),
@@ -132,7 +110,7 @@ pub enum EnergyConfigAction {
 
 #[async_trait]
 impl Processor for EnergyConfigHandler {
-    const NAME: &'static str = "energy_config_handler";
+    const NAME: &'static str = "energy_config";
     type Value = EnergyConfigAction;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
@@ -142,7 +120,7 @@ impl Processor for EnergyConfigHandler {
         let mut table_updates = HashMap::new();
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
+            if !self.ctx.is_indexed_tx(tx, &checkpoint.object_set) {
                 continue;
             }
 
@@ -239,7 +217,7 @@ impl Handler for EnergyConfigHandler {
                     self.ctx.tables.add_table(conn, table).await?;
                 }
                 EnergyConfigAction::Upsert(config) => {
-                    let current = upsert_map.entry(config.assembly_id.clone());
+                    let current = upsert_map.entry(config.type_id.to_string());
 
                     match current {
                         Entry::Occupied(mut entry) => {
@@ -264,7 +242,7 @@ impl Handler for EnergyConfigHandler {
         if !final_values.is_empty() {
             diesel::insert_into(energy_config)
                 .values(final_values)
-                .on_conflict((assembly_id, package_id))
+                .on_conflict((type_id, table_id))
                 .do_update()
                 .set((
                     energy_cost.eq(excluded(energy_cost)),

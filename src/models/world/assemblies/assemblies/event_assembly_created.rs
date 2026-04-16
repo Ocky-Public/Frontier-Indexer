@@ -44,7 +44,7 @@ impl StoredAssemblyCreated {
             occurred_at,
             id: move_event.assembly_id.to_hex(),
             item_id: move_event.assembly_key.item_id.to_string(),
-            tenant: move_event.assembly_key.tenant.to_string(),
+            tenant: move_event.assembly_key.tenant,
             type_id: move_event.type_id as i64,
             owner_cap_id: move_event.owner_cap_id.to_hex(),
         }

@@ -1,0 +1,60 @@
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+
+use sui_pg_db::Connection;
+
+use diesel_async::RunQueryDsl;
+
+use crate::models::world::StoredFuelConfig;
+
+pub struct FuelRegistry {
+    cache: RwLock<HashMap<i64, Arc<StoredFuelConfig>>>,
+}
+
+impl FuelRegistry {
+    pub async fn load_from_db(conn: &mut Connection<'_>) -> Self {
+        use crate::schema::indexer::fuel_config::dsl::*;
+
+        let records = fuel_config
+            .load::<StoredFuelConfig>(conn)
+            .await
+            .expect("Failed to fetch records from fuel registry");
+
+        let mut cache = HashMap::new();
+
+        for record in records {
+            cache.insert(record.type_id.clone(), Arc::new(record));
+        }
+
+        Self {
+            cache: RwLock::new(cache),
+        }
+    }
+
+    pub fn add_fuel(&self, record: &StoredFuelConfig) {
+        let shared = Arc::new(record.clone());
+
+        self.cache
+            .write()
+            .unwrap()
+            .insert(shared.type_id.clone(), shared);
+    }
+
+    pub fn get_record(&self, type_id: &i64) -> Option<Arc<StoredFuelConfig>> {
+        let cache = self.cache.read().unwrap();
+        cache.get(type_id).cloned()
+    }
+
+    pub fn get_value(&self, type_id: &i64) -> i64 {
+        let cache = self.cache.read().unwrap();
+        match cache.get(type_id).cloned() {
+            Some(record) => record.efficiency,
+            None => 10,
+        }
+    }
+
+    pub fn contains(&self, type_id: &i64) -> bool {
+        let cache = self.cache.read().unwrap();
+        cache.contains_key(type_id)
+    }
+}

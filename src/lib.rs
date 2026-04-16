@@ -1,7 +1,21 @@
+use std::collections::HashSet;
+use std::str::FromStr;
 use std::sync::Arc;
+use sui_types::TypeTag;
 use url::Url;
 
-use crate::models::system::table_registry::TableRegistry;
+use move_core_types::account_address::AccountAddress;
+
+use sui_indexer_alt_framework::types::full_checkpoint_content::ExecutedTransaction;
+use sui_indexer_alt_framework::types::full_checkpoint_content::ObjectSet;
+
+use sui_types::event::Event;
+use sui_types::object::Object;
+use sui_types::transaction::Command;
+use sui_types::transaction::TransactionDataAPI;
+
+use crate::models::system::FuelRegistry;
+use crate::models::system::TableRegistry;
 
 pub mod handlers;
 pub mod models;
@@ -209,18 +223,149 @@ impl AppEnv {
 pub struct AppContext {
     pub env: AppEnv,
     pub tables: Arc<TableRegistry>,
+    pub fuels: Arc<FuelRegistry>,
+
+    pub app_packages: Arc<HashSet<AccountAddress>>,
+    pub world_packages: Arc<HashSet<AccountAddress>>,
 }
 
 impl AppContext {
-    /// Get app package addresses for this environment
-    pub fn get_app_package_strings(&self) -> Vec<&str> {
-        // If sandbox mode is active, both overrides are set together by init_package_override
-        // (World may be an empty slice). Use them instead of the hardcoded constants.
+    pub fn new(env: AppEnv, tables: TableRegistry, fuels: FuelRegistry) -> Self {
+        let app_packages = Self::get_app_package_strings(env)
+            .iter()
+            .filter_map(|s| AccountAddress::from_str(s).ok())
+            .collect();
+
+        let world_packages = Self::get_world_package_strings(env)
+            .iter()
+            .filter_map(|s| AccountAddress::from_str(s).ok())
+            .collect();
+
+        Self {
+            env,
+            tables: Arc::new(tables),
+            fuels: Arc::new(fuels),
+            app_packages: Arc::new(app_packages),
+            world_packages: Arc::new(world_packages),
+        }
+    }
+
+    pub fn is_indexed_tx(&self, tx: &ExecutedTransaction, checkpoint_objects: &ObjectSet) -> bool {
+        let app_addresses = self.package_addresses();
+        let app_packages = self.package_ids();
+
+        // Check input object against all known package versions
+        let has_app_input = tx.input_objects(checkpoint_objects).any(|obj| {
+            obj.data
+                .type_()
+                .map(|t| app_addresses.iter().any(|addr| t.address() == *addr))
+                .unwrap_or_default()
+        });
+
+        if has_app_input {
+            return true;
+        }
+
+        // Check if any changed object is in our table registry
+        let touches_registered_table =
+            tx.effects
+                .all_changed_objects()
+                .iter()
+                .any(|(entry, _, _)| {
+                    if self.tables.contains(&entry.0.to_canonical_string(true)) {
+                        return true;
+                    }
+
+                    false
+                });
+
+        if touches_registered_table {
+            return true;
+        }
+
+        // Check if transaction has application events from any version
+        if let Some(events) = &tx.events {
+            let has_app_event = events.data.iter().any(|event| {
+                app_addresses
+                    .iter()
+                    .any(|addr| event.type_.address == *addr)
+            });
+
+            if has_app_event {
+                return true;
+            }
+        }
+
+        // Check if transaction calls a application function from any version
+        let txn_kind = tx.transaction.kind();
+
+        let has_app_call = txn_kind.iter_commands().any(|cmd| {
+            if let Command::MoveCall(move_call) = cmd {
+                app_packages.iter().any(|pkg| *pkg == move_call.package)
+            } else {
+                false
+            }
+        });
+
+        has_app_call
+    }
+
+    pub fn is_world_event(&self, event: &Event, module_name: &str, event_name: &str) -> bool {
+        let tag = &event.type_;
+
+        if tag.module.as_str() != module_name {
+            return false;
+        }
+
+        if tag.name.as_str() != event_name {
+            return false;
+        }
+
+        self.world_packages.contains(&tag.address)
+    }
+
+    pub fn is_world_object(&self, obj: &Object, module_name: &str, struct_name: &str) -> bool {
+        let Some(move_type) = obj.type_() else {
+            return false;
+        };
+
+        let Some(tag) = move_type.other() else {
+            return false;
+        };
+
+        if tag.module.as_str() != module_name {
+            return false;
+        }
+
+        if tag.name.as_str() != struct_name {
+            return false;
+        }
+
+        self.world_packages.contains(&tag.address)
+    }
+
+    pub fn is_world_struct(&self, tag: &TypeTag, module_name: &str, struct_name: &str) -> bool {
+        let TypeTag::Struct(s_tag) = tag else {
+            return false;
+        };
+
+        if s_tag.module.as_str() != module_name {
+            return false;
+        }
+
+        if s_tag.name.as_str() != struct_name {
+            return false;
+        }
+
+        self.world_packages.contains(&s_tag.address)
+    }
+
+    fn get_app_package_strings(env: AppEnv) -> Vec<&'static str> {
         if let Some(app) = sandbox::app_packages() {
             return app.to_vec();
         }
 
-        let app_packages = match self.env {
+        let app_packages = match env {
             AppEnv::Mainnet => MAINNET_PACKAGES,
             AppEnv::Testnet => TESTNET_PACKAGES,
         };
@@ -228,15 +373,12 @@ impl AppContext {
         app_packages.to_vec()
     }
 
-    /// Get world package addresses for this environment
-    pub fn get_world_package_strings(&self) -> Vec<&str> {
-        // If sandbox mode is active, both overrides are set together by init_package_override
-        // (World may be an empty slice). Use them instead of the hardcoded constants.
+    fn get_world_package_strings(env: AppEnv) -> Vec<&'static str> {
         if let Some(world) = sandbox::world_packages() {
             return world.to_vec();
         }
 
-        let world_packages = match self.env {
+        let world_packages = match env {
             AppEnv::Mainnet => MAINNET_WORLD_PACKAGES,
             AppEnv::Testnet => TESTNET_WORLD_PACKAGES,
         };
@@ -244,24 +386,20 @@ impl AppContext {
         world_packages.to_vec()
     }
 
-    /// Get all package addresses (App + World) for this environment
-    pub fn get_all_package_strings(&self) -> Vec<&str> {
-        // If sandbox mode is active, both overrides are set together by init_package_override
-        // (World may be an empty slice). Use them instead of the hardcoded constants.
+    fn get_all_package_strings(env: AppEnv) -> Vec<&'static str> {
         if let (Some(app), Some(world)) = (sandbox::app_packages(), sandbox::world_packages()) {
             let mut all = app.to_vec();
             all.extend_from_slice(world);
             return all;
         }
 
-        let (app_packages, world_packages) = match self.env {
+        let (app_packages, world_packages) = match env {
             AppEnv::Mainnet => (MAINNET_PACKAGES, MAINNET_WORLD_PACKAGES),
             AppEnv::Testnet => (TESTNET_PACKAGES, TESTNET_WORLD_PACKAGES),
         };
 
         let mut all_packages = app_packages.to_vec();
 
-        // Add margin packages if they're not invalid
         for &world_package in world_packages {
             if world_package != NOT_MAINNET_PACKAGE {
                 all_packages.push(world_package);
@@ -271,21 +409,21 @@ impl AppContext {
         all_packages
     }
 
-    pub fn package_ids(&self) -> Vec<sui_types::base_types::ObjectID> {
+    fn package_ids(&self) -> Vec<sui_types::base_types::ObjectID> {
         use std::str::FromStr;
         use sui_types::base_types::ObjectID;
 
-        self.get_all_package_strings()
+        Self::get_all_package_strings(self.env)
             .iter()
             .map(|pkg| ObjectID::from_str(pkg).unwrap())
             .collect()
     }
 
-    pub fn package_addresses(&self) -> Vec<move_core_types::account_address::AccountAddress> {
+    fn package_addresses(&self) -> Vec<move_core_types::account_address::AccountAddress> {
         use move_core_types::account_address::AccountAddress;
         use std::str::FromStr;
 
-        self.get_all_package_strings()
+        Self::get_all_package_strings(self.env)
             .iter()
             .map(|pkg| AccountAddress::from_str(pkg).unwrap())
             .collect()

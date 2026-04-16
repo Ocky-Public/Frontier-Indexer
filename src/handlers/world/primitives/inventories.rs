@@ -1,4 +1,3 @@
-pub mod inventory_entry_handlers;
 pub mod inventory_handler;
 pub mod item_burned_handler;
 pub mod item_deposited_handler;

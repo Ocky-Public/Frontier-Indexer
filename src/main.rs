@@ -1,7 +1,6 @@
 use anyhow::Context;
 use clap::Parser;
 use prometheus::Registry;
-use std::sync::Arc;
 use tokio;
 use url::Url;
 
@@ -17,9 +16,11 @@ use sui_indexer_alt_metrics::db::DbConnectionStatsCollector;
 use sui_indexer_alt_metrics::{MetricsArgs, MetricsService};
 use sui_pg_db::{Db, DbArgs};
 
-use indexer::models::system::table_registry::TableRegistry;
-use indexer::{handlers::*, AppContext};
-use indexer::{AppEnv, TESTNET_REMOTE_STORE_URL};
+use indexer::handlers::*;
+use indexer::models::system::FuelRegistry;
+use indexer::models::system::TableRegistry;
+use indexer::TESTNET_REMOTE_STORE_URL;
+use indexer::{AppContext, AppEnv};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
@@ -37,7 +38,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let AppConfig {
         metrics_address,
         db_config,
-        indexer_config,
+        indexer,
         sequential,
         ingestion,
         network,
@@ -78,9 +79,9 @@ async fn main() -> Result<(), anyhow::Error> {
         first_checkpoint,
         last_checkpoint,
         pipeline,
-    } = indexer_config;
+    } = indexer;
 
-    let indexer_args = IndexerArgs {
+    let indexer = IndexerArgs {
         first_checkpoint,
         last_checkpoint,
         pipeline,
@@ -125,7 +126,7 @@ async fn main() -> Result<(), anyhow::Error> {
         streaming_statement_timeout_ms,
     } = ingestion;
 
-    let ingestion_config = IngestionConfig {
+    let ingestion = IngestionConfig {
         checkpoint_buffer_size,
         retry_interval_ms,
         streaming_backoff_initial_batch_size,
@@ -179,7 +180,7 @@ async fn main() -> Result<(), anyhow::Error> {
         (env, ingestion, packages)
     };
 
-    let registry = Registry::new_custom(Some("frontier_indexer".into()), None)
+    let registry = Registry::new_custom(Some("frontier".into()), None)
         .context("Failed to create Prometheus registry.")?;
 
     let metrics = MetricsService::new(MetricsArgs { metrics_address }, registry.clone());
@@ -196,11 +197,9 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut conn = store.connect().await?;
     let table_registry = TableRegistry::load_from_db(&mut conn).await;
+    let fuel_registry = FuelRegistry::load_from_db(&mut conn).await;
 
-    let context = AppContext {
-        env,
-        tables: Arc::new(table_registry),
-    };
+    let context = AppContext::new(env, table_registry, fuel_registry);
 
     registry.register(Box::new(DbConnectionStatsCollector::new(
         Some("frontier_indexer_db"),
@@ -214,9 +213,9 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut indexer = Indexer::new(
         store.clone(),
-        indexer_args,
+        indexer,
         client_args,
-        ingestion_config,
+        ingestion,
         None,
         metrics.registry(),
     )
@@ -225,124 +224,90 @@ async fn main() -> Result<(), anyhow::Error> {
     // Register handlers based on selected packages
     for package in &packages {
         match package {
+            #[rustfmt::skip]
             Package::App => {}
+
+            #[rustfmt::skip]
             Package::World => {
-                indexer
-                    .sequential_pipeline(
-                        world::EnergyConfigHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Owner Caps
+                indexer.sequential_pipeline(world::OwnerCapCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::OwnerCapHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::OwnerCapTransferredHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::OwnerCapCreatedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Assemblies
+                indexer.sequential_pipeline(world::AssemblyCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::AssemblyHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::OwnerCapTransferredHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Extensions
+                indexer.sequential_pipeline(world::ExtensionFrozenHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(world::OwnerCapHandler::new(&context), sequential.clone())
-                    .await?;
+                // Gates
+                indexer.sequential_pipeline(world::GateConfigHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateExtensionAuthorizedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateExtensionRevokedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateJumpedHanlder::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateLinkedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateUnlinkedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GatePermitHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GatePermitIssuedHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(world::AssemblyHandler::new(&context), sequential.clone())
-                    .await?;
+                // Network Nodes
+                indexer.sequential_pipeline(world::NetworkNodeCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::NetworkNodeHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::AssemblyCreatedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Storage Units
+                indexer.sequential_pipeline(world::StorageUnitCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::StorageUnitExtensionAuthorizedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::StorageUnitExtensionRevokedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::StorageUnitHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(world::CharacterHandler::new(&context), sequential.clone())
-                    .await?;
+                // Turrets
+                indexer.sequential_pipeline(world::TurretCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::TurretExtensionAuthorizedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::TurretExtensionRevokedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::TurretHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::CharacterCreatedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Chracters
+                indexer.sequential_pipeline(world::CharacterCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::CharacterHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::LocationRevealedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Killmails
+                indexer.sequential_pipeline(world::KillmailHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::StatusChangedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Energy
+                indexer.sequential_pipeline(world::EnergyConfigHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::EnergyProductionStartedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::EnergyProductionStoppedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::EnergyReleasedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::EnergyReservedHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::EnergyProductionStartedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Fuel
+                indexer.sequential_pipeline(world::FuelBurningStartedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelBurningStoppedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelBurningUpdatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelConfigHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelDeletedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelDepositedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelEfficiencyRemovedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelEfficiencySetHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelWithdrawnHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::EnergyProductionStoppedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Inventories
+                indexer.sequential_pipeline(world::InventoryHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemBurnedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemDepositedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemDestroyedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemMintedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemWithdrawnHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::EnergyReleasedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Locations
+                indexer.sequential_pipeline(world::LocationRevealedHandler::new(&context), sequential.clone()).await?;
 
-                indexer
-                    .sequential_pipeline(
-                        world::EnergyReservedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
-
-                indexer
-                    .sequential_pipeline(
-                        world::FuelEfficiencySetHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
-
-                indexer
-                    .sequential_pipeline(
-                        world::FuelEfficiencyRemovedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
-
-                indexer
-                    .sequential_pipeline(
-                        world::FuelConfigHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
-
-                indexer
-                    .sequential_pipeline(
-                        world::FuelBurningStartedHandler::new(&context),
-                        sequential.clone(),
-                    )
-                    .await?;
+                // Status
+                indexer.sequential_pipeline(world::StatusChangedHandler::new(&context), sequential.clone()).await?;
             }
         }
     }

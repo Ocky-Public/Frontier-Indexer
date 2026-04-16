@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS indexer.characters (
   tenant              TEXT        NOT NULL,
   owner_cap_id        VARCHAR(66) NOT NULL,
   owner_address       VARCHAR(66) NOT NULL,
-  tribe_id            BIGINT      NOT NULL,
+  tribe_id            VARCHAR(20) NOT NULL,
   name                TEXT        NOT NULL,
   description         TEXT,
   url                 TEXT,

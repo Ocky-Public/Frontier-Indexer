@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS indexer.events_character_created (
   item_id             VARCHAR(20)   NOT NULL,
   tenant              TEXT          NOT NULL,
   owner_address       VARCHAR(66)   NOT NULL,
-  tribe_id            BIGINT        NOT NULL,
+  tribe_id            VARCHAR(20)   NOT NULL,
   PRIMARY KEY (event_id, occurred_at)
 );
 

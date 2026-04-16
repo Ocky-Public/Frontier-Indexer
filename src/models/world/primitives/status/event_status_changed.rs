@@ -28,7 +28,6 @@ pub struct StoredStatusChanged {
     pub occurred_at: DateTime<Utc>,
     pub id: String,
     pub item_id: String,
-    pub tenant: String,
     pub status: String,
     pub action: String,
 }
@@ -46,7 +45,6 @@ impl StoredStatusChanged {
             occurred_at,
             id: move_event.assembly_id.to_hex(),
             item_id: move_event.assembly_key.item_id.to_string(),
-            tenant: move_event.assembly_key.tenant.to_string(),
             status: move_event.status.as_ref().to_string(),
             action: move_event.action.as_ref().to_string(),
         }

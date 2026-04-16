@@ -17,11 +17,11 @@ pub struct MoveFuelConfig {
     pub fuel_efficiency: Table,
 }
 
-#[derive(Deserialize, Insertable, Debug, Clone, FieldCount)]
+#[derive(Deserialize, Insertable, Queryable, Selectable, Debug, Clone, FieldCount)]
 #[diesel(table_name = fuel_config)]
 pub struct StoredFuelConfig {
     pub table_id: String,
-    pub type_id: String,
+    pub type_id: i64,
     pub efficiency: i64,
     pub entry_object_id: String,
     pub checkpoint_updated: i64,
@@ -37,7 +37,7 @@ impl StoredFuelConfig {
 
         Self {
             table_id,
-            type_id: entry.name.to_string(),
+            type_id: entry.name as i64,
             efficiency: entry.value as i64,
             entry_object_id: obj.id().to_string(),
             checkpoint_updated,

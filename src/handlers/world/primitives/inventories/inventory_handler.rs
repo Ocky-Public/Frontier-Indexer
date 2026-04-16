@@ -1,0 +1,235 @@
+use async_trait::async_trait;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+
+use std::sync::Arc;
+
+use diesel::prelude::*;
+use diesel::query_dsl::methods::FilterDsl;
+use diesel::upsert::excluded;
+use diesel_async::RunQueryDsl;
+
+use sui_pg_db::FieldCount;
+use sui_types::effects::{IDOperation, TransactionEffectsAPI};
+use sui_types::object::Object;
+use sui_types::object::Owner;
+use sui_types::storage::ObjectKey;
+use sui_types::TypeTag;
+
+use sui_indexer_alt_framework::pipeline::sequential::Handler;
+use sui_indexer_alt_framework::pipeline::Processor;
+use sui_indexer_alt_framework::postgres::{Connection, Db};
+use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
+
+use crate::models::world::StoredInventory;
+use crate::models::world::StoredInventoryEntry;
+
+use crate::AppContext;
+
+pub struct InventoryHandler {
+    ctx: AppContext,
+}
+
+impl InventoryHandler {
+    pub fn new(ctx: &AppContext) -> Self {
+        Self { ctx: ctx.clone() }
+    }
+
+    fn is_inventory(&self, obj: &Object) -> bool {
+        let value_module = "inventory";
+        let value_struct = "Inventory";
+
+        let Some(move_type) = obj.type_() else {
+            return false;
+        };
+
+        if !move_type.is_dynamic_field() || move_type.type_params().len() != 2 {
+            return false;
+        }
+
+        let type_params = move_type.type_params();
+
+        if !self
+            .ctx
+            .is_world_struct(type_params[1].as_ref(), value_module, value_struct)
+        {
+            return false;
+        }
+
+        let TypeTag::Struct(s_tag) = type_params[0].as_ref() else {
+            return false;
+        };
+
+        s_tag.address.to_hex_literal() == "0x2"
+            && s_tag.module.as_str() == "object"
+            && s_tag.name.as_str() == "ID"
+    }
+}
+
+#[derive(FieldCount)]
+pub enum InventoryAction {
+    Upsert(StoredInventory),
+    Delete(String),
+}
+
+#[async_trait]
+impl Processor for InventoryHandler {
+    const NAME: &'static str = "inventories";
+    type Value = InventoryAction;
+
+    async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
+        let mut results = vec![];
+        let checkpoint_updated = checkpoint.summary.sequence_number as i64;
+
+        for tx in &checkpoint.transactions {
+            if !self.ctx.is_indexed_tx(tx, &checkpoint.object_set) {
+                continue;
+            }
+
+            for change in &tx.effects.object_changes() {
+                let object_id = change.id;
+
+                match change.id_operation {
+                    IDOperation::Created | IDOperation::None => {
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
+
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_inventory(obj) {
+                            let Owner::ObjectOwner(owner) = obj.owner else {
+                                continue;
+                            };
+
+                            let parent_id = owner.to_string();
+                            let inventory =
+                                StoredInventory::from_object(obj, parent_id, checkpoint_updated);
+                            results.push(InventoryAction::Upsert(inventory));
+                        }
+                    }
+                    IDOperation::Deleted => {
+                        results.push(InventoryAction::Delete(object_id.to_string()));
+                    }
+                }
+            }
+        }
+
+        Ok(results)
+    }
+}
+
+#[async_trait]
+impl Handler for InventoryHandler {
+    type Store = Db;
+    type Batch = Vec<Self::Value>;
+
+    fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
+        batch.extend(values);
+    }
+
+    async fn commit<'a>(
+        &self,
+        batch: &Self::Batch,
+        conn: &mut Connection<'a>,
+    ) -> anyhow::Result<usize> {
+        let mut upsert_map: HashMap<String, &StoredInventory> = HashMap::new();
+        let mut to_delete = Vec::new();
+
+        for action in batch {
+            match action {
+                InventoryAction::Upsert(inventory) => {
+                    let entry = upsert_map.entry(inventory.id.clone());
+
+                    match entry {
+                        Entry::Occupied(mut entry) => {
+                            if inventory.checkpoint_updated > entry.get().checkpoint_updated {
+                                entry.insert(inventory);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(inventory);
+                        }
+                    }
+                }
+                InventoryAction::Delete(id_str) => to_delete.push(id_str.clone()),
+            }
+        }
+
+        // Remove any updates for which deletions exist.
+        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+
+        let final_values: Vec<&StoredInventory> = upsert_map.into_values().collect();
+
+        if !final_values.is_empty() {
+            {
+                use crate::schema::indexer::inventories::dsl::*;
+                diesel::insert_into(inventories)
+                    .values(final_values.clone())
+                    .on_conflict(id)
+                    .do_update()
+                    .set((
+                        parent_id.eq(excluded(parent_id)),
+                        capacity_used.eq(excluded(capacity_used)),
+                        capacity_max.eq(excluded(capacity_max)),
+                        checkpoint_updated.eq(excluded(checkpoint_updated)),
+                    ))
+                    .filter(checkpoint_updated.lt(excluded(checkpoint_updated)))
+                    .execute(conn)
+                    .await?;
+            }
+
+            for inventory in final_values {
+                use crate::schema::indexer::inventory_entries::dsl::*;
+
+                let keys: Vec<i64> = inventory.entries.keys().cloned().collect();
+                let values: Vec<StoredInventoryEntry> =
+                    inventory.entries.values().cloned().collect();
+
+                diesel::insert_into(inventory_entries)
+                    .values(values)
+                    .on_conflict((inventory_id, type_id))
+                    .do_update()
+                    .set((
+                        item_id.eq(excluded(item_id)),
+                        volume.eq(excluded(volume)),
+                        quantity.eq(excluded(quantity)),
+                        checkpoint_updated.eq(excluded(checkpoint_updated)),
+                    ))
+                    .filter(checkpoint_updated.lt(excluded(checkpoint_updated)))
+                    .execute(conn)
+                    .await?;
+
+                diesel::delete(inventory_entries)
+                    .filter(inventory_id.eq(inventory.id.clone()))
+                    .filter(type_id.ne_all(keys))
+                    .execute(conn)
+                    .await?;
+            }
+        }
+
+        if !to_delete.is_empty() {
+            {
+                use crate::schema::indexer::inventories::dsl::*;
+                diesel::delete(inventories)
+                    .filter(id.eq_any(to_delete.clone()))
+                    .execute(conn)
+                    .await?;
+            }
+
+            {
+                use crate::schema::indexer::inventory_entries::dsl::*;
+                diesel::delete(inventory_entries)
+                    .filter(inventory_id.eq_any(to_delete))
+                    .execute(conn)
+                    .await?;
+            }
+        }
+
+        Ok(batch.len())
+    }
+}

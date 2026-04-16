@@ -22,7 +22,7 @@ pub struct StoredEnergyProductionStarted {
     pub event_id: String,
     pub occurred_at: DateTime<Utc>,
     pub id: String,
-    pub current_energy_production: i64,
+    pub production_current: i64,
 }
 
 impl StoredEnergyProductionStarted {
@@ -37,7 +37,7 @@ impl StoredEnergyProductionStarted {
             event_id: meta.event_digest(),
             occurred_at,
             id: move_event.energy_source_id.to_hex(),
-            current_energy_production: move_event.current_energy_production as i64,
+            production_current: move_event.current_energy_production as i64,
         }
     }
 }

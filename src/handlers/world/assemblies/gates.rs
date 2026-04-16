@@ -1,8 +1,10 @@
 pub mod gate_config_handler;
 pub mod gate_created_handler;
+pub mod gate_extension_authorized_handler;
+pub mod gate_extension_revoked_handler;
 pub mod gate_handler;
-pub mod gate_jump_handler;
+pub mod gate_jumped_handler;
 pub mod gate_linked_handler;
 pub mod gate_unlinked_handler;
-pub mod jump_permit_handler;
-pub mod jump_permit_issued_handler;
+pub mod gate_permit_handler;
+pub mod gate_permit_issued_handler;

@@ -1,19 +1,15 @@
 use async_trait::async_trait;
-use std::collections::HashSet;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use diesel_async::RunQueryDsl;
 
 use sui_types::event::Event;
 
-use move_core_types::account_address::AccountAddress;
 use sui_indexer_alt_framework::pipeline::sequential::Handler;
 use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
-use crate::handlers::is_indexed_tx;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredFuelEfficiencyRemoved;
 
@@ -21,42 +17,17 @@ use crate::AppContext;
 
 pub struct FuelEfficiencyRemovedHandler {
     ctx: AppContext,
-    package_set: HashSet<AccountAddress>,
 }
 
 impl FuelEfficiencyRemovedHandler {
     pub fn new(ctx: &AppContext) -> Self {
-        let package_set: HashSet<AccountAddress> = ctx
-            .get_world_package_strings()
-            .iter()
-            .filter_map(|s| AccountAddress::from_str(s).ok())
-            .collect();
-
-        Self {
-            ctx: ctx.clone(),
-            package_set,
-        }
+        Self { ctx: ctx.clone() }
     }
 
     fn is_fuel_efficiency_removed(&self, event: &Event) -> bool {
         let module_name = "fuel";
         let event_name = "FuelEfficiencyRemovedEvent";
-
-        let tag = &event.type_;
-
-        if !self.package_set.contains(&tag.address) {
-            return false;
-        }
-
-        if tag.module.as_str() != module_name {
-            return false;
-        }
-
-        if tag.name.as_str() != event_name {
-            return false;
-        }
-
-        true
+        self.ctx.is_world_event(event, module_name, event_name)
     }
 }
 
@@ -69,7 +40,7 @@ impl Processor for FuelEfficiencyRemovedHandler {
         let mut results = vec![];
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
+            if !self.ctx.is_indexed_tx(tx, &checkpoint.object_set) {
                 continue;
             }
 

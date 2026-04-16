@@ -3,10 +3,9 @@ CREATE TABLE IF NOT EXISTS indexer.events_fuel_deposited (
   occurred_at   TIMESTAMPTZ   NOT NULL,
   id            VARCHAR(66)   NOT NULL,
   item_id       VARCHAR(20)   NOT NULL,
-  tenant        TEXT          NOT NULL,
   type_id       BIGINT        NOT NULL,
+  quantity      BIGINT        NOT NULL,
   quantity_old  BIGINT        NOT NULL,
-  quantity_new  BIGINT        NOT NULL,
   burning       BOOLEAN       NOT NULL,
   PRIMARY KEY (event_id, occurred_at)
 );

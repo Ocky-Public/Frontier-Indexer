@@ -1,8 +1,7 @@
 use async_trait::async_trait;
-use move_core_types::account_address::AccountAddress;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
-use std::str::FromStr;
+use std::collections::HashMap;
+
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -20,53 +19,23 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
-use crate::handlers::is_indexed_tx;
 use crate::models::world::StoredCharacter;
 
 use crate::AppContext;
 
 pub struct CharacterHandler {
     ctx: AppContext,
-    package_set: HashSet<AccountAddress>,
 }
 
 impl CharacterHandler {
     pub fn new(ctx: &AppContext) -> Self {
-        let package_set: HashSet<AccountAddress> = ctx
-            .get_world_package_strings()
-            .iter()
-            .filter_map(|s| AccountAddress::from_str(s).ok())
-            .collect();
-
-        Self {
-            ctx: ctx.clone(),
-            package_set,
-        }
+        Self { ctx: ctx.clone() }
     }
 
     fn is_character(&self, obj: &Object) -> bool {
         let module_name = "character";
         let struct_name = "Character";
-
-        if let Some(move_type) = obj.type_() {
-            if let Some(tag) = move_type.other() {
-                if !self.package_set.contains(&tag.address) {
-                    return false;
-                }
-
-                if tag.module.as_str() != module_name {
-                    return false;
-                }
-
-                if tag.name.as_str() != struct_name {
-                    return false;
-                }
-
-                return true;
-            }
-        }
-
-        false
+        self.ctx.is_world_object(obj, module_name, struct_name)
     }
 }
 
@@ -78,7 +47,7 @@ pub enum CharacterAction {
 
 #[async_trait]
 impl Processor for CharacterHandler {
-    const NAME: &'static str = "character_handler";
+    const NAME: &'static str = "characters";
     type Value = CharacterAction;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
@@ -86,7 +55,7 @@ impl Processor for CharacterHandler {
         let checkpoint_updated = checkpoint.summary.sequence_number as i64;
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
+            if !self.ctx.is_indexed_tx(tx, &checkpoint.object_set) {
                 continue;
             }
 

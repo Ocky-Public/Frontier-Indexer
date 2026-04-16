@@ -152,7 +152,7 @@ pub struct AppConfig {
     pub db_config: DbConfig,
 
     #[command(flatten)]
-    pub indexer_config: IndexerConfig,
+    pub indexer: IndexerConfig,
 
     #[command(flatten)]
     pub sequential: Sequential,

@@ -15,10 +15,9 @@ pub struct StoredFuelWithdrawn {
     pub occurred_at: DateTime<Utc>,
     pub id: String,
     pub item_id: String,
-    pub tenant: String,
     pub type_id: i64,
+    pub quantity: i64,
     pub quantity_old: i64,
-    pub quantity_new: i64,
     pub burning: bool,
 }
 
@@ -32,10 +31,9 @@ impl StoredFuelWithdrawn {
             occurred_at,
             id: event.assembly_id.to_hex(),
             item_id: event.assembly_key.item_id.to_string(),
-            tenant: event.assembly_key.tenant.to_string(),
             type_id: event.type_id as i64,
+            quantity: event.new_quantity as i64,
             quantity_old: event.old_quantity as i64,
-            quantity_new: event.new_quantity as i64,
             burning: event.is_burning,
         }
     }

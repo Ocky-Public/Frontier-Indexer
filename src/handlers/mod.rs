@@ -2,15 +2,12 @@ use std::sync::Arc;
 
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 use sui_indexer_alt_framework::types::full_checkpoint_content::ExecutedTransaction;
-use sui_indexer_alt_framework::types::full_checkpoint_content::ObjectSet;
 
 use sui_types::effects::TransactionEffectsAPI;
 use sui_types::transaction::{Command, TransactionDataAPI};
 
 pub mod app;
 pub mod world;
-
-use crate::AppContext;
 
 /// Captures common transaction metadata for event processing.
 pub struct EventMeta {
@@ -29,7 +26,9 @@ impl EventMeta {
             sender: tx.transaction.sender().to_string().into(),
             checkpoint: checkpoint.summary.sequence_number as i64,
             checkpoint_timestamp_ms: checkpoint.summary.timestamp_ms as i64,
-            package: try_extract_move_call_package(tx).unwrap_or_default().into(),
+            package: Self::try_extract_move_call_package(tx)
+                .unwrap_or_default()
+                .into(),
             event_index: 0,
         }
     }
@@ -68,78 +67,14 @@ impl EventMeta {
     pub fn package(&self) -> String {
         self.package.to_string()
     }
-}
 
-pub(crate) fn is_indexed_tx(
-    tx: &ExecutedTransaction,
-    checkpoint_objects: &ObjectSet,
-    ctx: &AppContext,
-) -> bool {
-    let app_addresses = ctx.package_addresses();
-    let app_packages = ctx.package_ids();
-
-    // Check input object against all known package versions
-    let has_app_input = tx.input_objects(checkpoint_objects).any(|obj| {
-        obj.data
-            .type_()
-            .map(|t| app_addresses.iter().any(|addr| t.address() == *addr))
-            .unwrap_or_default()
-    });
-
-    if has_app_input {
-        return true;
-    }
-
-    // Check if any changed object is in our table registry
-    let touches_registered_table = tx
-        .effects
-        .all_changed_objects()
-        .iter()
-        .any(|(entry, _, _)| {
-            if ctx.tables.contains(&entry.0.to_canonical_string(true)) {
-                return true;
-            }
-
-            false
-        });
-
-    if touches_registered_table {
-        return true;
-    }
-
-    // Check if transaction has application events from any version
-    if let Some(events) = &tx.events {
-        let has_app_event = events.data.iter().any(|event| {
-            app_addresses
-                .iter()
-                .any(|addr| event.type_.address == *addr)
-        });
-
-        if has_app_event {
-            return true;
-        }
-    }
-
-    // Check if transaction calls a application function from any version
-    let txn_kind = tx.transaction.kind();
-
-    let has_app_call = txn_kind.iter_commands().any(|cmd| {
-        if let Command::MoveCall(move_call) = cmd {
-            app_packages.iter().any(|pkg| *pkg == move_call.package)
+    fn try_extract_move_call_package(tx: &ExecutedTransaction) -> Option<String> {
+        let txn_kind = tx.transaction.kind();
+        let first_command = txn_kind.iter_commands().next()?;
+        if let Command::MoveCall(move_call) = first_command {
+            Some(move_call.package.to_string())
         } else {
-            false
+            None
         }
-    });
-
-    has_app_call
-}
-
-pub(crate) fn try_extract_move_call_package(tx: &ExecutedTransaction) -> Option<String> {
-    let txn_kind = tx.transaction.kind();
-    let first_command = txn_kind.iter_commands().next()?;
-    if let Command::MoveCall(move_call) = first_command {
-        Some(move_call.package.to_string())
-    } else {
-        None
     }
 }

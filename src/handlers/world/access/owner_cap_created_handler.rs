@@ -1,19 +1,15 @@
 use async_trait::async_trait;
-use std::collections::HashSet;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use diesel_async::RunQueryDsl;
 
 use sui_types::event::Event;
 
-use move_core_types::account_address::AccountAddress;
 use sui_indexer_alt_framework::pipeline::sequential::Handler;
 use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
-use crate::handlers::is_indexed_tx;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredOwnerCapCreated;
 
@@ -21,55 +17,30 @@ use crate::AppContext;
 
 pub struct OwnerCapCreatedHandler {
     ctx: AppContext,
-    package_set: HashSet<AccountAddress>,
 }
 
 impl OwnerCapCreatedHandler {
     pub fn new(ctx: &AppContext) -> Self {
-        let package_set: HashSet<AccountAddress> = ctx
-            .get_world_package_strings()
-            .iter()
-            .filter_map(|s| AccountAddress::from_str(s).ok())
-            .collect();
-
-        Self {
-            ctx: ctx.clone(),
-            package_set,
-        }
+        Self { ctx: ctx.clone() }
     }
 
     fn is_owner_cap_created(&self, event: &Event) -> bool {
         let module_name = "access";
         let event_name = "OwnerCapCreatedEvent";
-
-        let tag = &event.type_;
-
-        if !self.package_set.contains(&tag.address) {
-            return false;
-        }
-
-        if tag.module.as_str() != module_name {
-            return false;
-        }
-
-        if tag.name.as_str() != event_name {
-            return false;
-        }
-
-        true
+        self.ctx.is_world_event(event, module_name, event_name)
     }
 }
 
 #[async_trait]
 impl Processor for OwnerCapCreatedHandler {
-    const NAME: &'static str = "owner_cap_created_handler";
+    const NAME: &'static str = "owner_cap_created";
     type Value = StoredOwnerCapCreated;
 
     async fn process(&self, checkpoint: &Arc<Checkpoint>) -> anyhow::Result<Vec<Self::Value>> {
         let mut results = vec![];
 
         for tx in &checkpoint.transactions {
-            if !is_indexed_tx(tx, &checkpoint.object_set, &self.ctx) {
+            if !self.ctx.is_indexed_tx(tx, &checkpoint.object_set) {
                 continue;
             }
 

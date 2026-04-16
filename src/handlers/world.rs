@@ -11,34 +11,35 @@ pub use access::owner_cap_transferred_handler::*;
 pub use assemblies::assemblies::assembly_created_handler::*;
 pub use assemblies::assemblies::assembly_handler::*;
 
-pub use assemblies::extensions::extension_authorized_handler::*;
-pub use assemblies::extensions::extension_config_frozen_handler::*;
-pub use assemblies::extensions::extension_freeze_handler::*;
-pub use assemblies::extensions::extension_revoked_handler::*;
+pub use assemblies::extensions::extension_frozen_handler::*;
 
 pub use assemblies::gates::gate_config_handler::*;
 pub use assemblies::gates::gate_created_handler::*;
+pub use assemblies::gates::gate_extension_authorized_handler::*;
+pub use assemblies::gates::gate_extension_revoked_handler::*;
 pub use assemblies::gates::gate_handler::*;
-pub use assemblies::gates::gate_jump_handler::*;
+pub use assemblies::gates::gate_jumped_handler::*;
 pub use assemblies::gates::gate_linked_handler::*;
+pub use assemblies::gates::gate_permit_handler::*;
+pub use assemblies::gates::gate_permit_issued_handler::*;
 pub use assemblies::gates::gate_unlinked_handler::*;
-pub use assemblies::gates::jump_permit_handler::*;
-pub use assemblies::gates::jump_permit_issued_handler::*;
 
 pub use assemblies::network_nodes::network_node_created_handler::*;
 pub use assemblies::network_nodes::network_node_handler::*;
 
 pub use assemblies::storage_units::storage_unit_created_handler::*;
+pub use assemblies::storage_units::storage_unit_extension_authorized_handler::*;
+pub use assemblies::storage_units::storage_unit_extension_revoked_handler::*;
 pub use assemblies::storage_units::storage_unit_handler::*;
 
-pub use assemblies::turrets::priority_list_updated_handler::*;
 pub use assemblies::turrets::turret_created_handler::*;
+pub use assemblies::turrets::turret_extension_authorized_handler::*;
+pub use assemblies::turrets::turret_extension_revoked_handler::*;
 pub use assemblies::turrets::turret_handler::*;
 
 pub use characters::character_created_handler::*;
 pub use characters::character_handler::*;
 
-pub use killmails::killmail_created_handler::*;
 pub use killmails::killmail_handler::*;
 
 pub use primitives::energy::energy_config_handler::*;
@@ -57,7 +58,6 @@ pub use primitives::fuel::fuel_efficiency_removed_handler::*;
 pub use primitives::fuel::fuel_efficiency_set_handler::*;
 pub use primitives::fuel::fuel_withdrawn::*;
 
-pub use primitives::inventories::inventory_entry_handlers::*;
 pub use primitives::inventories::inventory_handler::*;
 pub use primitives::inventories::item_burned_handler::*;
 pub use primitives::inventories::item_deposited_handler::*;
