@@ -235,21 +235,17 @@ impl Handler for TurretHandler {
         }
 
         if !to_delete.is_empty() {
-            {
-                use crate::schema::indexer::turrets::dsl::*;
-                diesel::delete(turrets)
-                    .filter(id.eq_any(to_delete.clone()))
-                    .execute(conn)
-                    .await?;
-            }
+            use crate::schema::indexer::{extension_freezes, turrets};
 
-            {
-                use crate::schema::indexer::extension_freezes::dsl::*;
-                diesel::delete(extension_freezes)
-                    .filter(id.eq_any(to_delete))
-                    .execute(conn)
-                    .await?;
-            }
+            diesel::delete(turrets::dsl::turrets)
+                .filter(turrets::dsl::id.eq_any(to_delete.clone()))
+                .execute(conn)
+                .await?;
+
+            diesel::delete(extension_freezes::dsl::extension_freezes)
+                .filter(extension_freezes::dsl::id.eq_any(to_delete))
+                .execute(conn)
+                .await?;
         }
 
         Ok(batch.len())
