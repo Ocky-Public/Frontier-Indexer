@@ -34,7 +34,7 @@ pub struct StoredItem {
 }
 
 impl StoredItem {
-    pub fn from_object(&self, obj: &Object) -> Self {
+    pub fn from_object(obj: &Object) -> Self {
         let move_obj = obj.data.try_as_move().expect("Object is not a Move object");
         let bytes = move_obj.contents();
 
