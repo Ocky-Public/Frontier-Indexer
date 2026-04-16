@@ -2,8 +2,9 @@ use serde::Deserialize;
 
 use diesel::prelude::*;
 
-use crate::schema::indexer::inventory_entries;
 use sui_indexer_alt_framework::FieldCount;
+
+use crate::schema::indexer::inventory_entries;
 
 #[derive(Deserialize)]
 pub struct MoveItemEntry {
@@ -16,6 +17,7 @@ pub struct MoveItemEntry {
 
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = inventory_entries)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredInventoryEntry {
     pub inventory_id: String,
     pub type_id: i64,
@@ -27,7 +29,6 @@ pub struct StoredInventoryEntry {
 
 impl StoredInventoryEntry {
     pub fn from_object(
-        &self,
         entry: &MoveItemEntry,
         inventory_id: String,
         checkpoint_updated: i64,
