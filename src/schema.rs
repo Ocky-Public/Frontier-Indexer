@@ -782,8 +782,9 @@ pub mod indexer {
             parent_id -> Varchar,
             #[max_length = 66]
             location -> Varchar,
+            #[max_length = 20]
+            item_id -> Varchar,
             type_id -> Int8,
-            item_id -> Int8,
             volume -> Int8,
             quantity -> Int8,
         }
