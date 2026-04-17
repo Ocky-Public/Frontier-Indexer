@@ -21,7 +21,7 @@ pub struct MoveItemEntry {
 pub struct StoredInventoryEntry {
     pub inventory_id: String,
     pub type_id: i64,
-    pub item_id: i64,
+    pub item_id: String,
     pub volume: i64,
     pub quantity: i64,
     pub checkpoint_updated: i64,
@@ -36,7 +36,7 @@ impl StoredInventoryEntry {
         Self {
             inventory_id,
             type_id: entry.type_id as i64,
-            item_id: entry.item_id as i64,
+            item_id: entry.item_id.to_string(),
             volume: entry.volume as i64,
             quantity: entry.quantity as i64,
             checkpoint_updated,
