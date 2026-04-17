@@ -79,7 +79,7 @@ impl Handler for ExtensionFrozenHandler {
 
         diesel::insert_into(events_extension_frozen)
             .values(batch)
-            .on_conflict((event_id, occurred_at))
+            .on_conflict((event_id, occurred_at, id))
             .do_nothing()
             .execute(conn)
             .await?;
