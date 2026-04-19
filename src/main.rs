@@ -137,7 +137,7 @@ async fn main() -> Result<(), anyhow::Error> {
     };
 
     let (env, ingestion_args, packages) = if sandbox.enabled {
-        // Sandbox mode - override package addresses then pick ingenstion source
+        // Sandbox mode - override package addresses then pick ingestion source
         let has_world = !sandbox.world_packages.is_empty();
 
         indexer::sandbox::init_package_override(sandbox.app_package_ids, sandbox.world_packages);
@@ -269,7 +269,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::TurretExtensionRevokedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::TurretHandler::new(&context), sequential.clone()).await?;
 
-                // Chracters
+                // Characters
                 indexer.sequential_pipeline(world::CharacterCreatedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::CharacterHandler::new(&context), sequential.clone()).await?;
 

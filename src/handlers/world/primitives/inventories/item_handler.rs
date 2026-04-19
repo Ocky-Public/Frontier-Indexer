@@ -133,7 +133,7 @@ impl Handler for ItemHandler {
                 .await?;
         }
 
-        // Deletions happen last incase an object was updated before deletion.
+        // Deletions happen last in case an object was updated before deletion.
         if !to_delete.is_empty() {
             diesel::delete(items)
                 .filter(id.eq_any(to_delete))

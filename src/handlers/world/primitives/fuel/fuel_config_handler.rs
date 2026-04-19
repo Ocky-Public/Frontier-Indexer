@@ -233,7 +233,7 @@ impl Handler for FuelConfigHandler {
             }
         }
 
-        // Remove an updaes for which deletions exist.
+        // Remove any updates for which deletions exist.
         upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
 
         let final_values: Vec<&StoredFuelConfig> = upsert_map.into_values().collect();
