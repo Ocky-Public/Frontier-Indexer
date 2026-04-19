@@ -87,9 +87,7 @@ async fn main() -> Result<(), anyhow::Error> {
         ..Default::default()
     };
 
-    let streaming_args = StreamingClientArgs {
-        ..Default::default()
-    };
+    let streaming_args = StreamingClientArgs::default();
 
     let Sequential {
         min_eager_rows,
