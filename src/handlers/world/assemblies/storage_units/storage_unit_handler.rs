@@ -206,7 +206,7 @@ impl Handler for StorageUnitHandler {
                 .on_conflict(id)
                 .do_update()
                 .set((
-                    item_id.eq(item_id),
+                    item_id.eq(excluded(item_id)),
                     tenant.eq(excluded(tenant)),
                     type_id.eq(excluded(type_id)),
                     owner_cap_id.eq(excluded(owner_cap_id)),

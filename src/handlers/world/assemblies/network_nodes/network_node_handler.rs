@@ -156,6 +156,7 @@ impl Handler for NetworkNodeHandler {
                     burn_updated.eq(excluded(burn_updated)),
                     burn_elapsed.eq(excluded(burn_elapsed)),
                     fuel_capacity.eq(excluded(fuel_capacity)),
+                    fuel_duration.eq(excluded(fuel_duration)),
                     fuel_quantity.eq(excluded(fuel_quantity)),
                     fuel_type.eq(excluded(fuel_type)),
                     fuel_volume.eq(excluded(fuel_volume)),

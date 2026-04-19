@@ -142,7 +142,7 @@ impl Handler for AssemblyHandler {
                     owner_cap_id.eq(excluded(owner_cap_id)),
                     location.eq(excluded(location)),
                     status.eq(excluded(status)),
-                    energy_source_id.eq(energy_source_id),
+                    energy_source_id.eq(excluded(energy_source_id)),
                     name.eq(excluded(name)),
                     description.eq(excluded(description)),
                     url.eq(excluded(url)),
