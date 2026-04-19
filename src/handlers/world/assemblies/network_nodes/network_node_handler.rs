@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use std::sync::Arc;
 
@@ -107,13 +107,13 @@ impl Handler for NetworkNodeHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::network_nodes::dsl::*;
 
-        let mut upsert_map: HashMap<String, &StoredNetworkNode> = HashMap::new();
-        let mut to_delete = Vec::new();
+        let mut to_upsert: HashMap<String, &StoredNetworkNode> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
 
         for action in batch {
             match action {
                 NetworkNodeAction::Upsert(network_node) => {
-                    let entry = upsert_map.entry(network_node.id.clone());
+                    let entry = to_upsert.entry(network_node.id.clone());
 
                     match entry {
                         Entry::Occupied(mut entry) => {
@@ -126,14 +126,16 @@ impl Handler for NetworkNodeHandler {
                         }
                     }
                 }
-                NetworkNodeAction::Delete(id_str) => to_delete.push(id_str.clone()),
+                NetworkNodeAction::Delete(id_str) => {
+                     to_delete.insert(id_str.clone());
+                }
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredNetworkNode> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredNetworkNode> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             diesel::insert_into(network_nodes)
