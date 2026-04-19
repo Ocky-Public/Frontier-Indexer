@@ -54,7 +54,7 @@ impl StoredGate {
         let move_obj = obj.data.try_as_move().expect("Object is not a Move object");
         let bytes = move_obj.contents();
 
-        let gate: MoveGate = bcs::from_bytes(bytes).expect("Failed to deserialze Gate object");
+        let gate: MoveGate = bcs::from_bytes(bytes).expect("Failed to deserialize Gate object");
 
         let location = format!("0x{:0>64}", hex::encode(&gate.location.location_hash));
 
@@ -114,18 +114,18 @@ impl Freezable for StoredGate {
     fn package_id(&self) -> String {
         self.package_id
             .clone()
-            .expect("Package_id was available on turret")
+            .expect("Package_id was not available on gate")
     }
 
     fn module_name(&self) -> String {
         self.module_name
             .clone()
-            .expect("Module_name was not available on turret")
+            .expect("Module_name was not available on gate")
     }
 
     fn struct_name(&self) -> String {
         self.struct_name
             .clone()
-            .expect("Struct_name was not available on turret")
+            .expect("Struct_name was not available on gate")
     }
 }

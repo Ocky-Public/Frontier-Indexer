@@ -39,7 +39,7 @@ pub struct StoredStorageUnitExtensionAuthorized {
 impl StoredStorageUnitExtensionAuthorized {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveStorageUnitExtensionAuthorized = bcs::from_bytes(&event.contents)
-            .expect("Failed to deserialze Storage Unit Extension Authorized event");
+            .expect("Failed to deserialize Storage Unit Extension Authorized event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
             .expect("Failed to parse checkpoint timestamp into DateTime");

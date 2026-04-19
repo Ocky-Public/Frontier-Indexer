@@ -67,7 +67,7 @@ impl StoredNetworkNode {
         let bytes = move_obj.contents();
 
         let network_node: MoveNetworkNode =
-            bcs::from_bytes(bytes).expect("Failed fo desrialize Network Node object");
+            bcs::from_bytes(bytes).expect("Failed fo deserialize Network Node object");
 
         let location = format!(
             "0x{:0>64}",

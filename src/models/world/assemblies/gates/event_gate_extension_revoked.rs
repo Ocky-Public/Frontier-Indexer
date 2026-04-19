@@ -35,10 +35,10 @@ pub struct StoredGateExtensionRevoked {
 impl StoredGateExtensionRevoked {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveGateExtensionRevoked = bcs::from_bytes(&event.contents)
-            .expect("Failed to deserialze Gate Extension Revoked event");
+            .expect("Failed to deserialize Gate Extension Revoked event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
-            .expect("Failed ot parse checkpoint timestamp into DateTime");
+            .expect("Failed to parse checkpoint timestamp into DateTime");
 
         let (package_id, module_name, struct_name) = move_event.revoked_extension.to_components();
 

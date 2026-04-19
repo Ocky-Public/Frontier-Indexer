@@ -53,7 +53,7 @@ impl StoredTurret {
         let bytes = move_obj.contents();
 
         let turret: MoveTurret =
-            bcs::from_bytes(bytes).expect("Failed to deserialze Turret object");
+            bcs::from_bytes(bytes).expect("Failed to deserialize Turret object");
 
         let location = format!("0x{:0>64}", hex::encode(&turret.location.location_hash));
 

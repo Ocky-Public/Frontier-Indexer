@@ -39,7 +39,7 @@ pub struct StoredGateExtensionAuthorized {
 impl StoredGateExtensionAuthorized {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveGateExtensionAuthorized = bcs::from_bytes(&event.contents)
-            .expect("Failed to deserialze Gate Extension Authorized event");
+            .expect("Failed to deserialize Gate Extension Authorized event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
             .expect("Failed to parse checkpoint timestamp into DateTime");

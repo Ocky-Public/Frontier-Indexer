@@ -120,18 +120,18 @@ impl Freezable for StoredStorageUnit {
     fn package_id(&self) -> String {
         self.package_id
             .clone()
-            .expect("Package_id was available on turret")
+            .expect("Package_id was not available on storage unit")
     }
 
     fn module_name(&self) -> String {
         self.module_name
             .clone()
-            .expect("Module_name was not available on turret")
+            .expect("Module_name was not available on storage unit")
     }
 
     fn struct_name(&self) -> String {
         self.struct_name
             .clone()
-            .expect("Struct_name was not available on turret")
+            .expect("Struct_name was not available on storage unit")
     }
 }

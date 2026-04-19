@@ -48,17 +48,17 @@ pub struct StoredGatePermitIssued {
 impl StoredGatePermitIssued {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveGatePermitIssued = bcs::from_bytes(&event.contents)
-            .expect("Failed to deserialze Gate Permit Issued event");
+            .expect("Failed to deserialize Gate Permit Issued event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
-            .expect("Failed ot parse checkpoint timestamp into DateTime");
+            .expect("Failed to parse checkpoint timestamp into DateTime");
 
         let link_hash = format!("0x{:0>64}", hex::encode(&move_event.route_hash));
 
         let (package_id, module_name, struct_name) = move_event.extension_type.to_components();
 
         let expires_at = DateTime::from_timestamp_millis(move_event.expires_at_timestamp_ms as i64)
-            .expect("Failed ot parse checkpoint timestamp into DateTime");
+            .expect("Failed to parse checkpoint timestamp into DateTime");
 
         Self {
             event_id: meta.event_digest(),

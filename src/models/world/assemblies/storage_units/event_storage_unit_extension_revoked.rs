@@ -35,10 +35,10 @@ pub struct StoredStorageUnitExtensionRevoked {
 impl StoredStorageUnitExtensionRevoked {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveStorageUnitExtensionRevoked = bcs::from_bytes(&event.contents)
-            .expect("Failed to deserialze Storage Unit Extension Revoked event");
+            .expect("Failed to deserialize Storage Unit Extension Revoked event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
-            .expect("Failed ot parse checkpoint timestamp into DateTime");
+            .expect("Failed to parse checkpoint timestamp into DateTime");
 
         let (package_id, module_name, struct_name) = move_event.revoked_extension.to_components();
 
