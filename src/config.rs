@@ -137,7 +137,7 @@ pub struct SandboxArgs {
     pub env: SandboxEnv,
 
     #[arg(long, env = "SANDBOX_APP_PACKAGES", value_delimiter = ',')]
-    pub app_package_id: Vec<String>,
+    pub app_package_ids: Vec<String>,
 
     #[clap(long, env = "SANDBOX_WORLD_PACKAGES", value_delimiter = ',')]
     pub world_packages: Vec<String>,

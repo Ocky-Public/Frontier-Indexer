@@ -140,7 +140,7 @@ async fn main() -> Result<(), anyhow::Error> {
         // Sandbox mode - override package addresses then pick ingenstion source
         let has_world = !sandbox.world_packages.is_empty();
 
-        indexer::sandbox::init_package_override(sandbox.app_package_id, sandbox.world_packages);
+        indexer::sandbox::init_package_override(sandbox.app_package_ids, sandbox.world_packages);
 
         let ingestion = match sandbox.env {
             SandboxEnv::Localnet => IngestionClientArgs {
