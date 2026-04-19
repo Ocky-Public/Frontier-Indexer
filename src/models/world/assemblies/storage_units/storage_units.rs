@@ -62,10 +62,7 @@ impl StoredStorageUnit {
             hex::encode(&storage_unit.location.location_hash)
         );
 
-        let energy_source_id = match storage_unit.energy_source_id {
-            Some(source) => Some(source.to_hex()),
-            None => None,
-        };
+        let energy_source_id = storage_unit.energy_source_id.map(|source| source.to_hex());
 
         let inventory_ids = storage_unit
             .inventory_keys
@@ -73,15 +70,10 @@ impl StoredStorageUnit {
             .map(|entry| entry.to_hex())
             .collect();
 
-        let (name, description, url) = match storage_unit.metadata {
-            Some(metadata) => {
-                let name = metadata.name;
-                let description = metadata.description;
-                let url = metadata.url;
-                (Some(name), Some(description), Some(url))
-            }
-            None => (None, None, None),
-        };
+        let (name, description, url) = storage_unit
+            .metadata
+            .map(|meta| (Some(meta.name), Some(meta.description), Some(meta.url)))
+            .unwrap_or_default();
 
         let (package_id, module_name, struct_name) = match storage_unit.extension {
             Some(extension) => {
@@ -120,18 +112,18 @@ impl Freezable for StoredStorageUnit {
     fn package_id(&self) -> String {
         self.package_id
             .clone()
-            .expect("Package_id was available on turret")
+            .expect("Package_id was not available on storage unit")
     }
 
     fn module_name(&self) -> String {
         self.module_name
             .clone()
-            .expect("Module_name was not available on turret")
+            .expect("Module_name was not available on storage unit")
     }
 
     fn struct_name(&self) -> String {
         self.struct_name
             .clone()
-            .expect("Struct_name was not available on turret")
+            .expect("Struct_name was not available on storage unit")
     }
 }

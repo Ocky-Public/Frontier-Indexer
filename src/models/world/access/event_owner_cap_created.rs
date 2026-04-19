@@ -28,7 +28,7 @@ pub struct StoredOwnerCapCreated {
 impl StoredOwnerCapCreated {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveOwnerCapCreated =
-            bcs::from_bytes(&event.contents).expect("Failed to deserialze OwnerCap Created event");
+            bcs::from_bytes(&event.contents).expect("Failed to deserialize OwnerCap Created event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
             .expect("Failed to parse checkpoint timestamp into DateTime");

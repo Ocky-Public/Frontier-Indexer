@@ -42,14 +42,10 @@ impl StoredCharacter {
         let character: MoveCharacter =
             bcs::from_bytes(bytes).expect("Failed to deserialize Character object");
 
-        let (name, description, url) = match character.metadata {
-            Some(metadata) => (
-                metadata.name,
-                Some(metadata.description),
-                Some(metadata.url),
-            ),
-            None => ("Unknown".to_string(), None, None),
-        };
+        let (name, description, url) = character
+            .metadata
+            .map(|meta| (meta.name, Some(meta.description), Some(meta.url)))
+            .unwrap_or(("Unknown".to_string(), None, None));
 
         Self {
             id: character.id.to_hex(),

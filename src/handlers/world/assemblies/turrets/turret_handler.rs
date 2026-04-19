@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use std::sync::Arc;
 
@@ -62,7 +62,7 @@ impl TurretHandler {
             return false;
         }
 
-        !self.ctx.is_world_struct(
+        self.ctx.is_world_struct(
             move_type.type_params()[1].as_ref(),
             value_module,
             value_struct,
@@ -165,14 +165,14 @@ impl Handler for TurretHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        let mut upsert_map: HashMap<String, &StoredTurret> = HashMap::new();
+        let mut to_upsert: HashMap<String, &StoredTurret> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
         let mut to_freeze = Vec::new();
-        let mut to_delete = Vec::new();
 
         for action in batch {
             match action {
                 TurretAction::Upsert(turret) => {
-                    let entry = upsert_map.entry(turret.id.clone());
+                    let entry = to_upsert.entry(turret.id.clone());
 
                     match entry {
                         Entry::Occupied(mut entry) => {
@@ -185,15 +185,17 @@ impl Handler for TurretHandler {
                         }
                     }
                 }
+                TurretAction::Delete(id_str) => {
+                    to_delete.insert(id_str.clone());
+                }
                 TurretAction::Freeze(freeze) => to_freeze.push(freeze),
-                TurretAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredTurret> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredTurret> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             use crate::schema::indexer::turrets::dsl::*;
@@ -203,7 +205,7 @@ impl Handler for TurretHandler {
                 .on_conflict(id)
                 .do_update()
                 .set((
-                    item_id.eq(item_id),
+                    item_id.eq(excluded(item_id)),
                     tenant.eq(excluded(tenant)),
                     type_id.eq(excluded(type_id)),
                     owner_cap_id.eq(excluded(owner_cap_id)),

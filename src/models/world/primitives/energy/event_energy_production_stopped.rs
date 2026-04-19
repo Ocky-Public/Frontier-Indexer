@@ -26,7 +26,7 @@ pub struct StoredEnergyProductionStopped {
 impl StoredEnergyProductionStopped {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveEnergyProductionStopped = bcs::from_bytes(&event.contents)
-            .expect("Failed to deserliaze Energy Production Started event");
+            .expect("Failed to deserialize Energy Production Started event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
             .expect("Failed to parse checkpoint timestamp into DateTime");

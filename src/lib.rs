@@ -151,7 +151,7 @@ pub fn get_app_package_address(env: AppEnv) -> Result<&'static str, String> {
         return app
             .first()
             .copied()
-            .ok_or_else(|| "No app packages configure in sandbox mode".to_string());
+            .ok_or_else(|| "No app packages configured in sandbox mode".to_string());
     }
 
     let packages = get_app_package_addresses(env);
@@ -185,7 +185,7 @@ pub fn get_world_package_address(env: AppEnv) -> Result<&'static str, String> {
         return world
             .first()
             .copied()
-            .ok_or_else(|| "No world packages configure in sandbox mode".to_string());
+            .ok_or_else(|| "No world packages configured in sandbox mode".to_string());
     }
 
     let packages = get_world_package_addresses(env);

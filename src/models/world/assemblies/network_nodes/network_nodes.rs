@@ -67,7 +67,7 @@ impl StoredNetworkNode {
         let bytes = move_obj.contents();
 
         let network_node: MoveNetworkNode =
-            bcs::from_bytes(bytes).expect("Failed fo desrialize Network Node object");
+            bcs::from_bytes(bytes).expect("Failed fo deserialize Network Node object");
 
         let location = format!(
             "0x{:0>64}",
@@ -126,25 +126,17 @@ impl StoredNetworkNode {
             None => 0,
         };
 
-        let fuel_type = match network_node.fuel.type_id {
-            Some(type_id) => Some(type_id as i64),
-            None => None,
-        };
+        let fuel_type = network_node.fuel.type_id.map(|type_id| type_id as i64);
 
-        let fuel_volume = match network_node.fuel.unit_volume {
-            Some(unit_volume) => Some(unit_volume as i64),
-            None => None,
-        };
+        let fuel_volume = network_node
+            .fuel
+            .unit_volume
+            .map(|unit_volume| unit_volume as i64);
 
-        let (name, description, url) = match network_node.metadata {
-            Some(metadata) => {
-                let name = metadata.name;
-                let description = metadata.description;
-                let url = metadata.url;
-                (Some(name), Some(description), Some(url))
-            }
-            None => (None, None, None),
-        };
+        let (name, description, url) = network_node
+            .metadata
+            .map(|meta| (Some(meta.name), Some(meta.description), Some(meta.url)))
+            .unwrap_or_default();
 
         Self {
             id: network_node.id.to_hex(),

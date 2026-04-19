@@ -15,11 +15,11 @@ use crate::models::world::StoredGateJumped;
 
 use crate::AppContext;
 
-pub struct GateJumpedHanlder {
+pub struct GateJumpedHandler {
     ctx: AppContext,
 }
 
-impl GateJumpedHanlder {
+impl GateJumpedHandler {
     pub fn new(ctx: &AppContext) -> Self {
         Self { ctx: ctx.clone() }
     }
@@ -32,7 +32,7 @@ impl GateJumpedHanlder {
 }
 
 #[async_trait]
-impl Processor for GateJumpedHanlder {
+impl Processor for GateJumpedHandler {
     const NAME: &'static str = "gate_jumped";
     type Value = StoredGateJumped;
 
@@ -62,7 +62,7 @@ impl Processor for GateJumpedHanlder {
 }
 
 #[async_trait]
-impl Handler for GateJumpedHanlder {
+impl Handler for GateJumpedHandler {
     type Store = Db;
     type Batch = Vec<Self::Value>;
 

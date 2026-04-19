@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -63,15 +63,19 @@ impl Processor for OwnerCapHandler {
 
                 match change.id_operation {
                     IDOperation::Created | IDOperation::None => {
-                        if let Some(version) = change.output_version {
-                            let key = ObjectKey(object_id, version);
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
 
-                            if let Some(obj) = checkpoint.object_set.get(&key) {
-                                if self.is_owner_cap(obj) {
-                                    let owner_cap = StoredOwnerCap::from_object(obj, checkpoint_updated);
-                                    results.push(OwnerCapAction::Upsert(owner_cap));
-                                }
-                            }
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_owner_cap(obj) {
+                            let owner_cap = StoredOwnerCap::from_object(obj, checkpoint_updated);
+                            results.push(OwnerCapAction::Upsert(owner_cap));
                         }
                     }
                     IDOperation::Deleted => {
@@ -101,13 +105,14 @@ impl Handler for OwnerCapHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::owner_caps::dsl::*;
 
-        let mut upsert_map: HashMap<String, &StoredOwnerCap> = HashMap::new();
-        let mut to_delete = Vec::new();
+        let mut to_upsert: HashMap<String, &StoredOwnerCap> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
 
         for action in batch {
             match action {
                 OwnerCapAction::Upsert(owner_cap) => {
-                    let entry = upsert_map.entry(owner_cap.id.clone());
+                    let entry = to_upsert.entry(owner_cap.id.clone());
+
                     match entry {
                         Entry::Occupied(mut entry) => {
                             if owner_cap.checkpoint_updated > entry.get().checkpoint_updated {
@@ -119,14 +124,16 @@ impl Handler for OwnerCapHandler {
                         }
                     }
                 }
-                OwnerCapAction::Delete(id_str) => to_delete.push(id_str.clone()),
+                OwnerCapAction::Delete(id_str) => {
+                    to_delete.insert(id_str.clone());
+                }
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredOwnerCap> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredOwnerCap> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             diesel::insert_into(owner_caps)
@@ -146,7 +153,7 @@ impl Handler for OwnerCapHandler {
                 .await?;
         }
 
-        // Deletions happen last incase an object was updated before deletion.
+        // Deletions happen last in case an object was updated before deletion.
         if !to_delete.is_empty() {
             diesel::delete(owner_caps)
                 .filter(id.eq_any(to_delete))

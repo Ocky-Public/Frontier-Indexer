@@ -1,7 +1,6 @@
 use anyhow::Context;
 use clap::Parser;
 use prometheus::Registry;
-use tokio;
 use url::Url;
 
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
@@ -88,9 +87,7 @@ async fn main() -> Result<(), anyhow::Error> {
         ..Default::default()
     };
 
-    let streaming_args = StreamingClientArgs {
-        ..Default::default()
-    };
+    let streaming_args = StreamingClientArgs::default();
 
     let Sequential {
         min_eager_rows,
@@ -137,10 +134,10 @@ async fn main() -> Result<(), anyhow::Error> {
     };
 
     let (env, ingestion_args, packages) = if sandbox.enabled {
-        // Sandbox mode - override package addresses then pick ingenstion source
+        // Sandbox mode - override package addresses then pick ingestion source
         let has_world = !sandbox.world_packages.is_empty();
 
-        indexer::sandbox::init_package_override(sandbox.app_package_id, sandbox.world_packages);
+        indexer::sandbox::init_package_override(sandbox.app_package_ids, sandbox.world_packages);
 
         let ingestion = match sandbox.env {
             SandboxEnv::Localnet => IngestionClientArgs {
@@ -247,7 +244,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::GateExtensionAuthorizedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateExtensionRevokedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateHandler::new(&context), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::GateJumpedHanlder::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateJumpedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateLinkedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateUnlinkedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GatePermitHandler::new(&context), sequential.clone()).await?;
@@ -269,7 +266,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::TurretExtensionRevokedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::TurretHandler::new(&context), sequential.clone()).await?;
 
-                // Chracters
+                // Characters
                 indexer.sequential_pipeline(world::CharacterCreatedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::CharacterHandler::new(&context), sequential.clone()).await?;
 

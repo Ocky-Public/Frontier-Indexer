@@ -37,10 +37,10 @@ pub struct StoredGateJumped {
 impl StoredGateJumped {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveGateJumped =
-            bcs::from_bytes(&event.contents).expect("Failed to deserialze Gate Jumped event");
+            bcs::from_bytes(&event.contents).expect("Failed to deserialize Gate Jumped event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
-            .expect("Failed ot parse checkpoint timestamp into DateTime");
+            .expect("Failed to parse checkpoint timestamp into DateTime");
 
         Self {
             event_id: meta.event_digest(),

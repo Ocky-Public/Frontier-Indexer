@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use std::sync::Arc;
 
@@ -165,14 +165,14 @@ impl Handler for GateHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        let mut upsert_map: HashMap<String, &StoredGate> = HashMap::new();
+        let mut to_upsert: HashMap<String, &StoredGate> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
         let mut to_freeze = Vec::new();
-        let mut to_delete = Vec::new();
 
         for action in batch {
             match action {
                 GateAction::Upsert(gate) => {
-                    let entry = upsert_map.entry(gate.id.clone());
+                    let entry = to_upsert.entry(gate.id.clone());
 
                     match entry {
                         Entry::Occupied(mut entry) => {
@@ -185,15 +185,17 @@ impl Handler for GateHandler {
                         }
                     }
                 }
+                GateAction::Delete(id_str) => {
+                    to_delete.insert(id_str.clone());
+                }
                 GateAction::Freeze(freeze) => to_freeze.push(freeze),
-                GateAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredGate> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredGate> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             use crate::schema::indexer::gates::dsl::*;
@@ -203,7 +205,7 @@ impl Handler for GateHandler {
                 .on_conflict(id)
                 .do_update()
                 .set((
-                    item_id.eq(item_id),
+                    item_id.eq(excluded(item_id)),
                     tenant.eq(excluded(tenant)),
                     type_id.eq(excluded(type_id)),
                     owner_cap_id.eq(excluded(owner_cap_id)),

@@ -31,12 +31,12 @@ impl StoredGatePermit {
         let bytes = move_obj.contents();
 
         let permit: MoveGatePermit =
-            bcs::from_bytes(bytes).expect("Failed to deserialze Gate Permit object");
+            bcs::from_bytes(bytes).expect("Failed to deserialize Gate Permit object");
 
         let link_hash = format!("0x{:0>64}", hex::encode(&permit.route_hash));
 
         let expires_at = DateTime::from_timestamp_millis(permit.expires_at_timestamp_ms as i64)
-            .expect("Failed ot parse checkpoint timestamp into DateTime");
+            .expect("Failed to parse checkpoint timestamp into DateTime");
 
         Self {
             id: permit.id.to_hex(),

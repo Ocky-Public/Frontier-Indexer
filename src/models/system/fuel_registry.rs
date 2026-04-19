@@ -7,6 +7,9 @@ use diesel_async::RunQueryDsl;
 
 use crate::models::world::StoredFuelConfig;
 
+/// Default fuel efficiency used when no on-chain config has been indexed yet.
+const DEFAULT_FUEL_EFFICIENCY: i64 = 10;
+
 pub struct FuelRegistry {
     cache: RwLock<HashMap<i64, Arc<StoredFuelConfig>>>,
 }
@@ -49,7 +52,7 @@ impl FuelRegistry {
         let cache = self.cache.read().unwrap();
         match cache.get(type_id).cloned() {
             Some(record) => record.efficiency,
-            None => 10,
+            None => DEFAULT_FUEL_EFFICIENCY,
         }
     }
 

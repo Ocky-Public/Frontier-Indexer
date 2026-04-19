@@ -50,19 +50,12 @@ impl StoredAssembly {
 
         let location = format!("0x{:0>64}", hex::encode(&assembly.location.location_hash));
 
-        let energy_source_id = match assembly.energy_source_id {
-            Some(source) => Some(source.to_hex()),
-            None => None,
-        };
+        let energy_source_id = assembly.energy_source_id.map(|source| source.to_hex());
 
-        let (name, description, url) = match assembly.metadata {
-            Some(metadata) => (
-                Some(metadata.name),
-                Some(metadata.description),
-                Some(metadata.url),
-            ),
-            None => (None, None, None),
-        };
+        let (name, description, url) = assembly
+            .metadata
+            .map(|meta| (Some(meta.name), Some(meta.description), Some(meta.url)))
+            .unwrap_or_default();
 
         Self {
             id: assembly.id.to_hex(),

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use move_core_types::account_address::AccountAddress;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -208,8 +208,8 @@ impl Handler for EnergyConfigHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::energy_config::dsl::*;
 
-        let mut upsert_map: HashMap<String, &StoredEnergyConfig> = HashMap::new();
-        let mut to_delete = Vec::new();
+        let mut to_upsert: HashMap<String, &StoredEnergyConfig> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
 
         for action in batch {
             match action {
@@ -217,7 +217,7 @@ impl Handler for EnergyConfigHandler {
                     self.ctx.tables.add_table(conn, table).await?;
                 }
                 EnergyConfigAction::Upsert(config) => {
-                    let current = upsert_map.entry(config.type_id.to_string());
+                    let current = to_upsert.entry(config.type_id.to_string());
 
                     match current {
                         Entry::Occupied(mut entry) => {
@@ -230,14 +230,16 @@ impl Handler for EnergyConfigHandler {
                         }
                     }
                 }
-                EnergyConfigAction::Delete(id_str) => to_delete.push(id_str.clone()),
+                EnergyConfigAction::Delete(id_str) => {
+                    to_delete.insert(id_str.clone());
+                }
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredEnergyConfig> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredEnergyConfig> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             diesel::insert_into(energy_config)

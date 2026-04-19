@@ -50,7 +50,7 @@ impl StoredKillmail {
         let bytes = move_obj.contents();
 
         let killmail: MoveKillmail =
-            bcs::from_bytes(bytes).expect("Failed to deserial Killmail object");
+            bcs::from_bytes(bytes).expect("Failed to deserialize Killmail object");
 
         let occurred_at = DateTime::from_timestamp(killmail.kill_timestamp as i64, 0)
             .expect("Failed to parse killmail timestamp into DateTime");

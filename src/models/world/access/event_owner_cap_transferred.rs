@@ -32,7 +32,7 @@ pub struct StoredOwnerCapTransferred {
 impl StoredOwnerCapTransferred {
     pub fn from_event(event: &Event, meta: &EventMeta) -> Self {
         let move_event: MoveOwnerCapTransferred = bcs::from_bytes(&event.contents)
-            .expect("Failed to deserialze OwnerCap Transferred event");
+            .expect("Failed to deserialize OwnerCap Transferred event");
 
         let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
             .expect("Failed to parse checkpoint timestamp into DateTime");

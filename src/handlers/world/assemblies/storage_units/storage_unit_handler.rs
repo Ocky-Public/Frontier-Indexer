@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use std::sync::Arc;
 
@@ -168,35 +168,37 @@ impl Handler for StorageUnitHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        let mut upsert_map: HashMap<String, &StoredStorageUnit> = HashMap::new();
+        let mut to_upsert: HashMap<String, &StoredStorageUnit> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
         let mut to_freeze = Vec::new();
-        let mut to_delete = Vec::new();
 
         for action in batch {
             match action {
-                StorageUnitAction::Upsert(turret) => {
-                    let entry = upsert_map.entry(turret.id.clone());
+                StorageUnitAction::Upsert(storage_unit) => {
+                    let entry = to_upsert.entry(storage_unit.id.clone());
 
                     match entry {
                         Entry::Occupied(mut entry) => {
-                            if turret.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(turret);
+                            if storage_unit.checkpoint_updated > entry.get().checkpoint_updated {
+                                entry.insert(storage_unit);
                             }
                         }
                         Entry::Vacant(entry) => {
-                            entry.insert(turret);
+                            entry.insert(storage_unit);
                         }
                     }
                 }
+                StorageUnitAction::Delete(id_str) => {
+                    to_delete.insert(id_str.clone());
+                }
                 StorageUnitAction::Freeze(freeze) => to_freeze.push(freeze),
-                StorageUnitAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredStorageUnit> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredStorageUnit> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             use crate::schema::indexer::storage_units::dsl::*;
@@ -206,7 +208,7 @@ impl Handler for StorageUnitHandler {
                 .on_conflict(id)
                 .do_update()
                 .set((
-                    item_id.eq(item_id),
+                    item_id.eq(excluded(item_id)),
                     tenant.eq(excluded(tenant)),
                     type_id.eq(excluded(type_id)),
                     owner_cap_id.eq(excluded(owner_cap_id)),

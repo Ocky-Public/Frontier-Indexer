@@ -54,28 +54,18 @@ impl StoredGate {
         let move_obj = obj.data.try_as_move().expect("Object is not a Move object");
         let bytes = move_obj.contents();
 
-        let gate: MoveGate = bcs::from_bytes(bytes).expect("Failed to deserialze Gate object");
+        let gate: MoveGate = bcs::from_bytes(bytes).expect("Failed to deserialize Gate object");
 
         let location = format!("0x{:0>64}", hex::encode(&gate.location.location_hash));
 
-        let energy_source_id = match gate.energy_source_id {
-            Some(source) => Some(source.to_hex()),
-            None => None,
-        };
+        let energy_source_id = gate.energy_source_id.map(|source| source.to_hex());
 
-        let linked_id = match gate.linked_gate_id {
-            Some(source) => Some(source.to_hex()),
-            None => None,
-        };
+        let linked_id = gate.linked_gate_id.map(|id| id.to_hex());
 
-        let (name, description, url) = match gate.metadata {
-            Some(metadata) => (
-                Some(metadata.name),
-                Some(metadata.description),
-                Some(metadata.url),
-            ),
-            None => (None, None, None),
-        };
+        let (name, description, url) = gate
+            .metadata
+            .map(|meta| (Some(meta.name), Some(meta.description), Some(meta.url)))
+            .unwrap_or_default();
 
         let (package_id, module_name, struct_name) = match gate.extension {
             Some(extension) => {
@@ -114,18 +104,18 @@ impl Freezable for StoredGate {
     fn package_id(&self) -> String {
         self.package_id
             .clone()
-            .expect("Package_id was available on turret")
+            .expect("Package_id was not available on gate")
     }
 
     fn module_name(&self) -> String {
         self.module_name
             .clone()
-            .expect("Module_name was not available on turret")
+            .expect("Module_name was not available on gate")
     }
 
     fn struct_name(&self) -> String {
         self.struct_name
             .clone()
-            .expect("Struct_name was not available on turret")
+            .expect("Struct_name was not available on gate")
     }
 }

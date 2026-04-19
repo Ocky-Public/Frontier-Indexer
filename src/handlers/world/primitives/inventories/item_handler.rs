@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use std::sync::Arc;
 
@@ -61,15 +61,19 @@ impl Processor for ItemHandler {
 
                 match change.id_operation {
                     IDOperation::Created => {
-                        if let Some(version) = change.output_version {
-                            let key = ObjectKey(object_id, version);
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
 
-                            if let Some(obj) = checkpoint.object_set.get(&key) {
-                                if self.is_item(obj) {
-                                    let assembly = StoredItem::from_object(obj);
-                                    results.push(ItemAction::Upsert(assembly));
-                                }
-                            }
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_item(obj) {
+                            let assembly = StoredItem::from_object(obj);
+                            results.push(ItemAction::Upsert(assembly));
                         }
                     }
                     IDOperation::None => {} // Items are immutable, no need to handle updates.
@@ -100,13 +104,13 @@ impl Handler for ItemHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::items::dsl::*;
 
-        let mut upsert_map: HashMap<String, &StoredItem> = HashMap::new();
-        let mut to_delete = Vec::new();
+        let mut to_upsert: HashMap<String, &StoredItem> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
 
         for action in batch {
             match action {
                 ItemAction::Upsert(item) => {
-                    let entry = upsert_map.entry(item.id.clone());
+                    let entry = to_upsert.entry(item.id.clone());
 
                     match entry {
                         Entry::Occupied(mut _entry) => {}
@@ -115,14 +119,16 @@ impl Handler for ItemHandler {
                         }
                     }
                 }
-                ItemAction::Delete(id_str) => to_delete.push(id_str.clone()),
+                ItemAction::Delete(id_str) => {
+                    to_delete.insert(id_str.clone());
+                }
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredItem> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredItem> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             diesel::insert_into(items)
@@ -133,7 +139,7 @@ impl Handler for ItemHandler {
                 .await?;
         }
 
-        // Deletions happen last incase an object was updated before deletion.
+        // Deletions happen last in case an object was updated before deletion.
         if !to_delete.is_empty() {
             diesel::delete(items)
                 .filter(id.eq_any(to_delete))

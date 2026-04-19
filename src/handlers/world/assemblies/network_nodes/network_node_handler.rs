@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use std::sync::Arc;
 
@@ -64,19 +64,20 @@ impl Processor for NetworkNodeHandler {
 
                 match change.id_operation {
                     IDOperation::Created | IDOperation::None => {
-                        if let Some(version) = change.output_version {
-                            let key = ObjectKey(object_id, version);
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
 
-                            if let Some(obj) = checkpoint.object_set.get(&key) {
-                                if self.is_network_node(obj) {
-                                    let turret = StoredNetworkNode::from_object(
-                                        &self.ctx,
-                                        obj,
-                                        checkpoint_updated,
-                                    );
-                                    results.push(NetworkNodeAction::Upsert(turret));
-                                }
-                            }
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_network_node(obj) {
+                            let network_node =
+                                StoredNetworkNode::from_object(&self.ctx, obj, checkpoint_updated);
+                            results.push(NetworkNodeAction::Upsert(network_node));
                         }
                     }
                     IDOperation::Deleted => {
@@ -106,33 +107,35 @@ impl Handler for NetworkNodeHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::network_nodes::dsl::*;
 
-        let mut upsert_map: HashMap<String, &StoredNetworkNode> = HashMap::new();
-        let mut to_delete = Vec::new();
+        let mut to_upsert: HashMap<String, &StoredNetworkNode> = HashMap::new();
+        let mut to_delete: HashSet<String> = HashSet::new();
 
         for action in batch {
             match action {
-                NetworkNodeAction::Upsert(turret) => {
-                    let entry = upsert_map.entry(turret.id.clone());
+                NetworkNodeAction::Upsert(network_node) => {
+                    let entry = to_upsert.entry(network_node.id.clone());
 
                     match entry {
                         Entry::Occupied(mut entry) => {
-                            if turret.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(turret);
+                            if network_node.checkpoint_updated > entry.get().checkpoint_updated {
+                                entry.insert(network_node);
                             }
                         }
                         Entry::Vacant(entry) => {
-                            entry.insert(turret);
+                            entry.insert(network_node);
                         }
                     }
                 }
-                NetworkNodeAction::Delete(id_str) => to_delete.push(id_str.clone()),
+                NetworkNodeAction::Delete(id_str) => {
+                     to_delete.insert(id_str.clone());
+                }
             }
         }
 
         // Remove any updates for which deletions exist.
-        upsert_map.retain(|obj_id, _| !to_delete.contains(obj_id));
+        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
 
-        let final_values: Vec<&StoredNetworkNode> = upsert_map.into_values().collect();
+        let final_values: Vec<&StoredNetworkNode> = to_upsert.into_values().collect();
 
         if !final_values.is_empty() {
             diesel::insert_into(network_nodes)
@@ -156,6 +159,7 @@ impl Handler for NetworkNodeHandler {
                     burn_updated.eq(excluded(burn_updated)),
                     burn_elapsed.eq(excluded(burn_elapsed)),
                     fuel_capacity.eq(excluded(fuel_capacity)),
+                    fuel_duration.eq(excluded(fuel_duration)),
                     fuel_quantity.eq(excluded(fuel_quantity)),
                     fuel_type.eq(excluded(fuel_type)),
                     fuel_volume.eq(excluded(fuel_volume)),

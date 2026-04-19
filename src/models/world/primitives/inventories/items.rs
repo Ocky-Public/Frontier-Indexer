@@ -38,7 +38,7 @@ impl StoredItem {
         let move_obj = obj.data.try_as_move().expect("Object is not a Move object");
         let bytes = move_obj.contents();
 
-        let item: MoveItem = bcs::from_bytes(bytes).expect("Failed to deserialze Item object");
+        let item: MoveItem = bcs::from_bytes(bytes).expect("Failed to deserialize Item object");
 
         let location = format!("0x{:0>64}", hex::encode(&item.location.location_hash));
 
