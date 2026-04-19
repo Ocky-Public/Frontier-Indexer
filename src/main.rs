@@ -247,7 +247,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::GateExtensionAuthorizedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateExtensionRevokedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateHandler::new(&context), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::GateJumpedHanlder::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateJumpedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateLinkedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateUnlinkedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GatePermitHandler::new(&context), sequential.clone()).await?;
