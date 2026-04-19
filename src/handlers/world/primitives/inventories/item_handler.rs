@@ -61,15 +61,19 @@ impl Processor for ItemHandler {
 
                 match change.id_operation {
                     IDOperation::Created => {
-                        if let Some(version) = change.output_version {
-                            let key = ObjectKey(object_id, version);
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
 
-                            if let Some(obj) = checkpoint.object_set.get(&key) {
-                                if self.is_item(obj) {
-                                    let assembly = StoredItem::from_object(obj);
-                                    results.push(ItemAction::Upsert(assembly));
-                                }
-                            }
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_item(obj) {
+                            let assembly = StoredItem::from_object(obj);
+                            results.push(ItemAction::Upsert(assembly));
                         }
                     }
                     IDOperation::None => {} // Items are immutable, no need to handle updates.
