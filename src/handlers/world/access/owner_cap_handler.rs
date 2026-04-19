@@ -63,15 +63,19 @@ impl Processor for OwnerCapHandler {
 
                 match change.id_operation {
                     IDOperation::Created | IDOperation::None => {
-                        if let Some(version) = change.output_version {
-                            let key = ObjectKey(object_id, version);
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
 
-                            if let Some(obj) = checkpoint.object_set.get(&key) {
-                                if self.is_owner_cap(obj) {
-                                    let owner_cap = StoredOwnerCap::from_object(obj, checkpoint_updated);
-                                    results.push(OwnerCapAction::Upsert(owner_cap));
-                                }
-                            }
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
+
+                        if self.is_owner_cap(obj) {
+                            let owner_cap = StoredOwnerCap::from_object(obj, checkpoint_updated);
+                            results.push(OwnerCapAction::Upsert(owner_cap));
                         }
                     }
                     IDOperation::Deleted => {
