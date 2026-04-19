@@ -62,7 +62,7 @@ impl TurretHandler {
             return false;
         }
 
-        !self.ctx.is_world_struct(
+        self.ctx.is_world_struct(
             move_type.type_params()[1].as_ref(),
             value_module,
             value_struct,
