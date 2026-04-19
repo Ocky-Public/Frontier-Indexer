@@ -1,7 +1,6 @@
 use anyhow::Context;
 use clap::Parser;
 use prometheus::Registry;
-use tokio;
 use url::Url;
 
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
