@@ -15,6 +15,7 @@ RUN apt-get update
 RUN apt-get -y --no-install-recommends install \
     build-essential \
     libssl-dev \
+    libpq-dev \
     pkg-config \
     curl \
     cmake \
