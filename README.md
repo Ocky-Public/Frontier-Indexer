@@ -57,10 +57,9 @@ For a full explanation of the handler system, package filtering, and how the ind
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/frontier/indexer.git
+   git clone https://github.com/Ocky-Public/Frontier-Indexer.git
    cd indexer
    ```
-
 2. Copy your environment config (or export the variables directly):
    ```sh
    cp .env.example .env
