@@ -14,7 +14,7 @@ use crate::schema::indexer::gate_config;
 #[derive(Deserialize)]
 pub struct MoveGateConfig {
     pub id: Address,
-    pub distance: Table,
+    pub max_distance_by_type: Table,
 }
 
 #[derive(Deserialize, Insertable, Debug, Clone, FieldCount)]

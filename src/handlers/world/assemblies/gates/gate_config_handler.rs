@@ -153,7 +153,7 @@ impl Processor for GateConfigHandler {
                                 .other()
                                 .expect("Failed to get appropriate move type for GateConfig");
 
-                            let table_id = gate_config.distance.id.to_canonical_string(true);
+                            let table_id = gate_config.max_distance_by_type.id.to_canonical_string(true);
 
                             let table_record = StoredTableRecord {
                                 table_id: table_id.clone(),
