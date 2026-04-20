@@ -9,7 +9,36 @@ A custom [Sui](https://sui.io/) indexer for the EVE Frontier world contracts. It
 
 ## Installation
 
-The indexer is distributed as a Docker container. It requires a running [TimescaleDB](https://www.timescale.com/) database; database schema migrations are applied automatically on startup. The recommended container is `docker.io/timescale/timescaledb-ha:pg17`:
+The indexer is distributed as a container image and includes a compose stack for local development. The stack starts the indexer alongside [TimescaleDB](https://www.timescale.com/), waits for the database to accept connections, and applies database schema migrations automatically on startup.
+
+```sh
+cp .env.sample .env
+```
+
+```sh
+./scripts/compose.sh up -d
+```
+
+If `.env` does not exist yet, the helper script will create it from `.env.sample` before invoking compose.
+
+The helper script auto-detects `docker compose`, `podman compose`, or `podman-compose`. To force a specific runtime, set `CONTAINER_RUNTIME`:
+
+```sh
+CONTAINER_RUNTIME=podman ./scripts/compose.sh up -d
+CONTAINER_RUNTIME=podman-compose ./scripts/compose.sh up -d
+```
+
+To validate the stack end-to-end, run the smoke test. It validates the compose configuration, builds the indexer image, waits for the database, checks the metrics endpoint on port `9184`, verifies the `indexer` schema exists, and then tears the stack down again.
+
+```sh
+./scripts/compose.sh smoke-test
+```
+
+The compose stack publishes PostgreSQL on port `5432` and Prometheus metrics on port `9184` for local inspection.
+
+### Manual Container Startup
+
+If you prefer to run the containers without compose, the equivalent manual flow still works. The recommended database image remains `docker.io/timescale/timescaledb-ha:pg17`:
 
 ```sh
 docker network create frontier
@@ -17,18 +46,15 @@ docker network create frontier
 
 ```sh
 docker run -d --network frontier \
-  --name timescaledb \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=postgres \
-  -p 5432:5432 \
-  docker.io/timescale/timescaledb-ha:pg17
+   --name timescaledb \
+   -e POSTGRES_USER=postgres \
+   -e POSTGRES_PASSWORD=postgres \
+   -e POSTGRES_DB=postgres \
+   -p 5432:5432 \
+   docker.io/timescale/timescaledb-ha:pg17
 ```
 
-> [!IMPORTANT]
-> You **must** wait a few seconds for the database to initialize before starting the indexer, otherwise it will fail to connect and exit.
-
-Then, start the indexer container:
+Then start the indexer container:
 
 ```sh
 INDEXER_VERSION=$(curl -s https://api.github.com/repos/Ocky-Public/Frontier-Indexer/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"\(.*\)".*/\1/')
@@ -81,7 +107,7 @@ For a full explanation of the handler system, package filtering, and how the ind
 2. Copy your environment config (or export the variables directly):
 
    ```sh
-   cp .env.example .env
+   cp .env.sample .env
    # edit .env with your database credentials and network settings
    ```
 

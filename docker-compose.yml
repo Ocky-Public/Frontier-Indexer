@@ -1,0 +1,46 @@
+services:
+  db:
+    image: docker.io/timescale/timescaledb-ha:pg17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      PGDATA: /home/postgres/pgdata/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - frontier-timescaledb-data:/home/postgres/pgdata
+
+  indexer:
+    image: frontier-indexer:local
+    build:
+      context: .
+      args:
+        PROFILE: release
+        GIT_REVISION: ${GIT_REVISION:-local}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_SCHEMA: indexer
+      METRICS_ADDRESS: 0.0.0.0:9184
+    env_file:
+      - .env
+    ports:
+      - "9184:9184"
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        until pg_isready -h "$${DB_HOST}" -p "$${DB_PORT}" -U "$${DB_USER}" -d "$${DB_NAME}"; do
+          sleep 1
+        done
+        exec /opt/indexer/bin/indexer
+
+volumes:
+  frontier-timescaledb-data:
