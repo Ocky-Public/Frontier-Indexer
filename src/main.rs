@@ -3,6 +3,7 @@ use clap::Parser;
 use prometheus::Registry;
 use url::Url;
 
+use diesel_async::RunQueryDsl;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 
 use sui_indexer_alt_framework::ingestion::ingestion_client::IngestionClientArgs;
@@ -186,6 +187,18 @@ async fn main() -> Result<(), anyhow::Error> {
     let store = Db::for_write(database_url, db_args)
         .await
         .context("Failed to connect to database")?;
+
+    // The connection URL sets search_path to the target schema, but Diesel needs to
+    // create its own migrations tracking table before any migrations run. If the schema
+    // does not exist yet that step fails, so we create it first.
+    {
+        let mut conn = store.connect().await.context("Failed to connect to database for schema creation")?;
+        let schema_name = db_schema.replace('"', "\"\"");
+        diesel::sql_query(format!("CREATE SCHEMA IF NOT EXISTS \"{schema_name}\""))
+            .execute(&mut *conn)
+            .await
+            .context("Failed to create database schema")?;
+    }
 
     store
         .run_migrations(Some(&MIGRATIONS))
