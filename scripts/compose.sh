@@ -62,7 +62,13 @@ case "$RUNTIME" in
 esac
 
 run_compose() {
-    (cd "$ROOT_DIR" && "${COMPOSE_CMD[@]}" "$@")
+    local compose_env_file="$ENV_FILE"
+
+    if [[ ! -f "$compose_env_file" ]]; then
+        compose_env_file="$ENV_SAMPLE_FILE"
+    fi
+
+    (cd "$ROOT_DIR" && INDEXER_ENV_FILE="$compose_env_file" "${COMPOSE_CMD[@]}" "$@")
 }
 
 ensure_env_file() {
@@ -154,11 +160,9 @@ case "$COMMAND" in
         run_compose up --build "$@"
         ;;
     down)
-        ensure_env_file
         run_compose down --remove-orphans "$@"
         ;;
     logs)
-        ensure_env_file
         run_compose logs -f "$@"
         ;;
     smoke-test)

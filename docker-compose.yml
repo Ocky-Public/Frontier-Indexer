@@ -30,14 +30,21 @@ services:
       DB_SCHEMA: indexer
       METRICS_ADDRESS: 0.0.0.0:9184
     env_file:
-      - .env
+      - ${INDEXER_ENV_FILE:-.env}
     ports:
       - "9184:9184"
     entrypoint:
       - /bin/sh
       - -ec
       - |
+        attempts=0
+        max_attempts=60
         until pg_isready -h "$${DB_HOST}" -p "$${DB_PORT}" -U "$${DB_USER}" -d "$${DB_NAME}"; do
+          attempts=$$((attempts + 1))
+          if [ "$$attempts" -ge "$$max_attempts" ]; then
+            echo "ERROR: Postgres did not become ready after $$max_attempts seconds (host=$${DB_HOST} port=$${DB_PORT} db=$${DB_NAME})." >&2
+            exit 1
+          fi
           sleep 1
         done
         exec /opt/indexer/bin/indexer
