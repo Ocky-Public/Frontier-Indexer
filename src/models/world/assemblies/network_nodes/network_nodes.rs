@@ -80,10 +80,10 @@ impl StoredNetworkNode {
             .map(|entry| entry.to_hex())
             .collect();
 
-        let burn_start = DateTime::from_timestamp(network_node.fuel.burn_start_time as i64, 0)
+        let burn_start = DateTime::from_timestamp_millis(network_node.fuel.burn_start_time as i64)
             .expect("Failed to parse burn start timestamp into DateTime");
 
-        let burn_updated = DateTime::from_timestamp(network_node.fuel.last_updated as i64, 0)
+        let burn_updated = DateTime::from_timestamp_millis(network_node.fuel.last_updated as i64)
             .expect("Failed to parse burn updated timestamp into DateTime");
 
         let fuel_duration: i64 = match network_node.fuel.type_id {
@@ -121,7 +121,7 @@ impl StoredNetworkNode {
                     }
                 }
 
-                ((stored * burn_time * efficiency) / 100) + remaining_fuel
+                (((stored * burn_time * efficiency) / 100) + remaining_fuel) / 1000
             }
             None => 0,
         };
