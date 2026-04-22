@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
@@ -21,7 +21,7 @@ pub struct MoveNetworkNodeCreated {
     pub max_energy_production: u64,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_network_node_created)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredNetworkNodeCreated {

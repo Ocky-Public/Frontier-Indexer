@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use move_core_types::account_address::AccountAddress;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
@@ -101,7 +102,7 @@ impl FuelConfigHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum FuelConfigAction {
     Register(StoredTableRecord),
     Upsert(StoredFuelConfig),

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -27,7 +27,7 @@ pub struct MoveTurret {
     pub extension: Option<MoveTypeName>,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = turrets)]
 pub struct StoredTurret {
     pub id: String,

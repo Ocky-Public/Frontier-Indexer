@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, Display, EnumString};
 
 use sui_indexer_alt_framework::FieldCount;
@@ -30,7 +30,7 @@ pub struct MoveKillmail {
     pub solar_system_id: MoveTenantItemId,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = killmails)]
 pub struct StoredKillmail {
     pub id: String,

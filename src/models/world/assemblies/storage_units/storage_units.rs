@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -28,7 +28,7 @@ pub struct MoveStorageUnit {
     pub extension: Option<MoveTypeName>,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = storage_units)]
 pub struct StoredStorageUnit {
     pub id: String,

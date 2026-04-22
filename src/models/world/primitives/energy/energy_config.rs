@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -16,7 +16,7 @@ pub struct MoveEnergyConfig {
     pub id: Address,
     pub assembly_energy: Table,
 }
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = energy_config)]
 pub struct StoredEnergyConfig {
     pub table_id: String,

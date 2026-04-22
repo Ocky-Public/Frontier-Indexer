@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
@@ -23,7 +23,7 @@ pub struct MoveLocationRevealed {
     pub z: String,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_location_revealed)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredLocationRevealed {

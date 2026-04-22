@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
-
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -39,7 +39,7 @@ impl CharacterHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum CharacterAction {
     Upsert(StoredCharacter),
     Delete(String),

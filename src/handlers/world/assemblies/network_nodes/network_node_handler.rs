@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
-
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -39,7 +39,7 @@ impl NetworkNodeHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum NetworkNodeAction {
     Upsert(StoredNetworkNode),
     Delete(String),
@@ -127,7 +127,7 @@ impl Handler for NetworkNodeHandler {
                     }
                 }
                 NetworkNodeAction::Delete(id_str) => {
-                     to_delete.insert(id_str.clone());
+                    to_delete.insert(id_str.clone());
                 }
             }
         }

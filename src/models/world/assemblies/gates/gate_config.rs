@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -17,7 +17,7 @@ pub struct MoveGateConfig {
     pub max_distance_by_type: Table,
 }
 
-#[derive(Deserialize, Insertable, Debug, Clone, FieldCount)]
+#[derive(Deserialize, Serialize, Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = gate_config)]
 pub struct StoredGateConfig {
     pub table_id: String,

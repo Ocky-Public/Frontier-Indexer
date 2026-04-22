@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
-
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -66,7 +66,7 @@ impl InventoryHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum InventoryAction {
     Upsert(StoredInventory),
     Delete(String),

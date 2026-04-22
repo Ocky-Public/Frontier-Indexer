@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -10,7 +11,7 @@ use diesel_async::RunQueryDsl;
 
 use crate::schema::indexer::system_table_registry;
 
-#[derive(Queryable, Insertable, Selectable, Clone, Debug)]
+#[derive(Queryable, Serialize, Insertable, Selectable, Clone, Debug)]
 #[diesel(table_name = system_table_registry)]
 pub struct StoredTableRecord {
     pub table_id: String,

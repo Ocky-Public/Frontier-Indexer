@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use move_core_types::account_address::AccountAddress;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
@@ -17,6 +17,7 @@ use sui_types::object::Owner;
 use sui_types::storage::ObjectKey;
 use sui_types::TypeTag;
 
+use move_core_types::account_address::AccountAddress;
 use sui_indexer_alt_framework::pipeline::sequential::Handler;
 use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
@@ -101,7 +102,7 @@ impl GateConfigHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum GateConfigAction {
     Register(StoredTableRecord),
     Upsert(StoredGateConfig),
@@ -153,7 +154,10 @@ impl Processor for GateConfigHandler {
                                 .other()
                                 .expect("Failed to get appropriate move type for GateConfig");
 
-                            let table_id = gate_config.max_distance_by_type.id.to_canonical_string(true);
+                            let table_id = gate_config
+                                .max_distance_by_type
+                                .id
+                                .to_canonical_string(true);
 
                             let table_record = StoredTableRecord {
                                 table_id: table_id.clone(),

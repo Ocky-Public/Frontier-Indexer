@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -38,7 +39,7 @@ impl OwnerCapHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum OwnerCapAction {
     Upsert(StoredOwnerCap),
     Delete(String),
