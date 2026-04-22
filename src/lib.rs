@@ -17,10 +17,12 @@ use sui_types::transaction::TransactionDataAPI;
 use crate::models::system::FuelRegistry;
 use crate::models::system::TableRegistry;
 
+pub mod emitters;
 pub mod handlers;
 pub mod models;
 pub mod sandbox;
 pub mod schema;
+pub mod transports;
 
 pub const NOT_MAINNET_PACKAGE: &str = "<not on mainnet>";
 
