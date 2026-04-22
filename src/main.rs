@@ -81,7 +81,7 @@ async fn main() -> Result<(), anyhow::Error> {
         pipeline,
     } = indexer;
 
-    let indexer = IndexerArgs {
+    let indexer_args = IndexerArgs {
         first_checkpoint,
         last_checkpoint,
         pipeline,
@@ -183,29 +183,26 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let metrics = MetricsService::new(MetricsArgs { metrics_address }, registry.clone());
 
-    // Prepare store for the indexer
     let store = Db::for_write(database_url, db_args)
         .await
         .context("Failed to connect to database")?;
 
-    // The connection URL sets search_path to the target schema, but Diesel needs to
-    // create its own migrations tracking table before any migrations run. If the schema
-    // does not exist yet that step fails, so we create it first.
-    {
-        let mut conn = store.connect().await.context("Failed to connect to database for schema creation")?;
-        let schema_name = db_schema.replace('"', "\"\"");
-        diesel::sql_query(format!("CREATE SCHEMA IF NOT EXISTS \"{schema_name}\""))
-            .execute(&mut *conn)
-            .await
-            .context("Failed to create database schema")?;
-    }
+    let mut conn = store
+        .connect()
+        .await
+        .context("Failed to get connection for database setup")?;
+
+    let schema_name = db_schema.replace('"', "\"\"");
+    diesel::sql_query(format!("CREATE SCHEMA IF NOT EXISTS \"{schema_name}\""))
+        .execute(&mut *conn)
+        .await
+        .context("Failed to create database schema")?;
 
     store
         .run_migrations(Some(&MIGRATIONS))
         .await
         .context("Failed to run pending migrations.")?;
 
-    let mut conn = store.connect().await?;
     let table_registry = TableRegistry::load_from_db(&mut conn).await;
     let fuel_registry = FuelRegistry::load_from_db(&mut conn).await;
 
@@ -223,7 +220,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut indexer = Indexer::new(
         store.clone(),
-        indexer,
+        indexer_args,
         client_args,
         ingestion,
         None,
