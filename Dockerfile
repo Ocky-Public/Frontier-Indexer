@@ -10,6 +10,7 @@ COPY Cargo.lock Cargo.toml ./
 COPY diesel.toml ./
 COPY src/ ./src/
 COPY migrations/ ./migrations/
+COPY pipelines.toml ./
 
 RUN apt-get update
 RUN apt-get -y --no-install-recommends install \
@@ -46,7 +47,9 @@ RUN rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/indexer/bin
 
+WORKDIR /opt/indexer/bin
 COPY --from=builder /work/target/release/indexer /opt/indexer/bin/indexer
+COPY --from=builder /work/pipelines.toml /opt/indexer/bin/pipelines.toml
 
 RUN ["chmod", "+x", "/opt/indexer/bin/indexer"]
 
