@@ -1,6 +1,7 @@
 use anyhow::Context;
 use clap::Parser;
 use prometheus::Registry;
+use std::path::Path;
 use url::Url;
 
 use diesel_async::RunQueryDsl;
@@ -26,7 +27,9 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 pub mod config;
 pub mod pipelines;
+
 pub use config::*;
+pub use pipelines::*;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -85,7 +88,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let pipelines: Vec<String> = if !pipeline.is_empty() {
         pipeline
     } else {
-        let config = PipelineConfig::from_file("./pipelines.toml")?;
+        let config = PipelineConfig::from_file(Path::new("./pipelines.toml"))?;
         config.enabled_pipelines().unwrap_or_default()
     };
 
