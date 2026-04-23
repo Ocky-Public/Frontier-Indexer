@@ -25,6 +25,7 @@ use indexer::{AppContext, AppEnv};
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 pub mod config;
+pub mod pipelines;
 pub use config::*;
 
 #[tokio::main]
@@ -81,10 +82,17 @@ async fn main() -> Result<(), anyhow::Error> {
         pipeline,
     } = indexer;
 
+    let pipelines: Vec<String> = if !pipeline.is_empty() {
+        pipeline
+    } else {
+        let config = PipelineConfig::from_file("./pipelines.toml")?;
+        config.enabled_pipelines().unwrap_or_default()
+    };
+
     let indexer_args = IndexerArgs {
         first_checkpoint,
         last_checkpoint,
-        pipeline,
+        pipeline: pipelines,
         ..Default::default()
     };
 
