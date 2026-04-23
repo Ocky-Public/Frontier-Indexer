@@ -21,6 +21,8 @@ strum = "0.28.0"
 strum_macros = "0.28.0"
 futures = "0.3.32"
 
+toml = { version = "0.8", features = ["parse"] }
+
 # References forked sui with custom framework
 sui-pg-db = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
 sui-types = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
