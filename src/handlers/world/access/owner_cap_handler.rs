@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -60,7 +60,7 @@ impl Processor for OwnerCapHandler {
             }
 
             for change in &tx.effects.object_changes() {
-                let object_id = change.id;
+                let id = change.id;
 
                 match change.id_operation {
                     IDOperation::Created | IDOperation::None => {
@@ -68,7 +68,7 @@ impl Processor for OwnerCapHandler {
                             continue;
                         };
 
-                        let key = ObjectKey(object_id, version);
+                        let key = ObjectKey(id, version);
 
                         let Some(obj) = checkpoint.object_set.get(&key) else {
                             continue;
@@ -80,7 +80,7 @@ impl Processor for OwnerCapHandler {
                         }
                     }
                     IDOperation::Deleted => {
-                        results.push(OwnerCapAction::Delete(object_id.to_string()));
+                        results.push(OwnerCapAction::Delete(id.to_string()));
                     }
                 }
             }
