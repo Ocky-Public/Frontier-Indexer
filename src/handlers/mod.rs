@@ -7,7 +7,10 @@ use sui_types::effects::TransactionEffectsAPI;
 use sui_types::transaction::{Command, TransactionDataAPI};
 
 pub mod app;
+pub mod emitter;
 pub mod world;
+
+pub use emitter::*;
 
 /// Captures common transaction metadata for event processing.
 pub struct EventMeta {
