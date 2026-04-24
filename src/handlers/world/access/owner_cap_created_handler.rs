@@ -13,6 +13,7 @@ use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredOwnerCapCreated;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
@@ -22,8 +23,11 @@ pub struct OwnerCapCreatedHandler {
 }
 
 impl OwnerCapCreatedHandler {
-    pub fn new(ctx: &AppContext, transports: Vec<Transport<StoredOwnerCapCreated>>) -> Self {
-        let emitter = Emitter::new(self.routing, transports);
+    pub fn new(
+        ctx: &AppContext,
+        transports: Vec<Arc<dyn Transport<StoredOwnerCapCreated>>>,
+    ) -> Self {
+        let emitter = Emitter::new(Self::routing, transports);
 
         Self {
             ctx: ctx.clone(),
@@ -108,7 +112,7 @@ impl Handler for OwnerCapCreatedHandler {
 
         tokio::spawn(async move {
             for entry in &batch {
-                self.emitter.dispatch(Self::NAME, entry).await;
+                emitter.dispatch(Self::NAME, entry).await;
             }
         });
     }
