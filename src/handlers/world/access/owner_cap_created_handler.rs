@@ -10,6 +10,7 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredOwnerCapCreated;
 
@@ -17,11 +18,21 @@ use crate::AppContext;
 
 pub struct OwnerCapCreatedHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StoredOwnerCapCreated>>,
 }
 
 impl OwnerCapCreatedHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Transport<StoredOwnerCapCreated>>) -> Self {
+        let emitter = Emitter::new(self.routing, transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
+    }
+
+    fn routing(entry: &StoredOwnerCapCreated) -> Option<String> {
+        Some(entry.object_id.clone())
     }
 
     fn is_owner_cap_created(&self, event: &Event) -> bool {
@@ -85,5 +96,20 @@ impl Handler for OwnerCapCreatedHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        if batch.is_empty() {
+            return;
+        }
+
+        let batch = batch.clone();
+        let emitter = Arc::clone(&self.emitter);
+
+        tokio::spawn(async move {
+            for entry in &batch {
+                self.emitter.dispatch(Self::NAME, entry).await;
+            }
+        });
     }
 }

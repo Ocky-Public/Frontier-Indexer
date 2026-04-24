@@ -248,7 +248,7 @@ async fn main() -> Result<(), anyhow::Error> {
             #[rustfmt::skip]
             Package::World => {
                 // Owner Caps
-                indexer.sequential_pipeline(world::OwnerCapCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::OwnerCapCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::OwnerCapHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::OwnerCapTransferredHandler::new(&context), sequential.clone()).await?;
 
