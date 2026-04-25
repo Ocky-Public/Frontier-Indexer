@@ -108,9 +108,9 @@ impl Handler for OwnerCapTransferredHandler {
         }
 
         let batch = batch.clone();
-        let emitter = Ard::clone(&self.emitter);
+        let emitter = Arc::clone(&self.emitter);
 
-        tokio.spawn(async move {
+        tokio::spawn(async move {
             for entry in &batch {
                 emitter.dispatch(Self::NAME, entry).await;
             }
