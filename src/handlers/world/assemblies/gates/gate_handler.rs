@@ -283,7 +283,7 @@ impl Handler for GateHandler {
                 .await?;
 
             diesel::delete(extension_freezes::dsl::extension_freezes)
-                .filter(extension_freezes::dsl::id.eq_any(to_delete))
+                .filter(extension_freezes::dsl::owner_id.eq_any(to_delete))
                 .execute(conn)
                 .await?;
         }
