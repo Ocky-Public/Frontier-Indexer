@@ -254,7 +254,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
                 // Assemblies
                 indexer.sequential_pipeline(world::AssemblyCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::AssemblyHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::AssemblyHandler::new(&context, vec![]), sequential.clone()).await?;
 
                 // Extensions
                 indexer.sequential_pipeline(world::ExtensionFrozenHandler::new(&context), sequential.clone()).await?;
