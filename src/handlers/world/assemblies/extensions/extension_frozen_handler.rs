@@ -27,18 +27,14 @@ impl ExtensionFrozenHandler {
         ctx: &AppContext,
         transports: Vec<Arc<dyn Transport<StoredExtensionFrozen>>>,
     ) -> Self {
-        let emitter = Emitter::new(Self::routing, transports);
+        let emitter = Emitter::new(transports);
 
         Self {
             ctx: ctx.clone(),
             emitter: Arc::new(emitter),
         }
     }
-
-    fn routing(entry: &StoredExtensionFrozen) -> Option<String> {
-        Some(entry.id.clone())
-    }
-
+    
     fn is_extension_frozen(&self, event: &Event) -> bool {
         let module_name = "extension_freeze";
         let event_name = "ExtensionConfigFrozenEvent";

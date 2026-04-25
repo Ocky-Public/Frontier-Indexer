@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -33,18 +32,11 @@ pub struct AssemblyHandler {
 
 impl AssemblyHandler {
     pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<AssemblyAction>>>) -> Self {
-        let emitter = Emitter::new(Self::routing, transports);
+        let emitter = Emitter::new(transports);
 
         Self {
             ctx: ctx.clone(),
             emitter: Arc::new(emitter),
-        }
-    }
-
-    fn routing(action: &AssemblyAction) -> Option<String> {
-        match action {
-            AssemblyAction::Upsert(entry) => Some(entry.id.clone()),
-            AssemblyAction::Delete(id_str) => Some(id_str.clone()),
         }
     }
 

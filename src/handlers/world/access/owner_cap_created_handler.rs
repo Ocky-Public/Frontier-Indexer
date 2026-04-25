@@ -27,16 +27,12 @@ impl OwnerCapCreatedHandler {
         ctx: &AppContext,
         transports: Vec<Arc<dyn Transport<StoredOwnerCapCreated>>>,
     ) -> Self {
-        let emitter = Emitter::new(Self::routing, transports);
+        let emitter = Emitter::new(transports);
 
         Self {
             ctx: ctx.clone(),
             emitter: Arc::new(emitter),
         }
-    }
-
-    fn routing(entry: &StoredOwnerCapCreated) -> Option<String> {
-        Some(entry.object_id.clone())
     }
 
     fn is_owner_cap_created(&self, event: &Event) -> bool {

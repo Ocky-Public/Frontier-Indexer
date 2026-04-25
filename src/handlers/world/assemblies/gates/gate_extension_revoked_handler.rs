@@ -27,16 +27,12 @@ impl GateExtensionRevokedHandler {
         ctx: &AppContext,
         transports: Vec<Arc<dyn Transport<StoredGateExtensionRevoked>>>,
     ) -> Self {
-        let emitter = Emitter::new(Self::routing, transports);
+        let emitter = Emitter::new(transports);
 
         Self {
             ctx: ctx.clone(),
             emitter: Arc::new(emitter),
         }
-    }
-
-    fn routing(entry: &StoredGateExtensionRevoked) -> Option<String> {
-        Some(entry.id.clone())
     }
 
     fn is_gate_extension_revoked(&self, event: &Event) -> bool {

@@ -24,16 +24,12 @@ pub struct GateCreatedHandler {
 
 impl GateCreatedHandler {
     pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<StoredGateCreated>>>) -> Self {
-        let emitter = Emitter::new(Self::routing, transports);
+        let emitter = Emitter::new(transports);
 
         Self {
             ctx: ctx.clone(),
             emitter: Arc::new(emitter),
         }
-    }
-
-    fn routing(entry: &StoredGateCreated) -> Option<String> {
-        Some(entry.id.clone())
     }
 
     fn is_gate_created(&self, event: &Event) -> bool {

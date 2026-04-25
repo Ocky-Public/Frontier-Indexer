@@ -27,16 +27,12 @@ impl AssemblyCreatedHandler {
         ctx: &AppContext,
         transports: Vec<Arc<dyn Transport<StoredAssemblyCreated>>>,
     ) -> Self {
-        let emitter = Emitter::new(Self::routing, transports);
+        let emitter = Emitter::new(transports);
 
         Self {
             ctx: ctx.clone(),
             emitter: Arc::new(emitter),
         }
-    }
-
-    fn routing(entry: &StoredAssemblyCreated) -> Option<String> {
-        Some(entry.id.clone())
     }
 
     fn is_assembly_created(&self, event: &Event) -> bool {
