@@ -10,18 +10,33 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredGateExtensionAuthorized;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct GateExtensionAuthorizedHandler {
-  ctx: AppContext,
+    ctx: AppContext,
+    emitter: Arc<Emitter<StoredGateExtensionAuthorized>>,
 }
 
 impl GateExtensionAuthorizedHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(
+        ctx: &AppContext,
+        transports: Vec<Arc<dyn Transport<StoredGateExtensionAuthorized>>>,
+    ) -> Self {
+        let emitter = Emitter::new(Self::routing, transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
+    }
+
+    fn routing(entry: &StoredGateExtensionAuthorized) -> Option<String> {
+        Some(entry.id.clone())
     }
 
     fn is_gate_extension_authorized(&self, event: &Event) -> bool {
@@ -85,5 +100,20 @@ impl Handler for GateExtensionAuthorizedHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        if batch.is_empty() {
+            return;
+        }
+
+        let batch = batch.clone();
+        let emitter = Arc::clone(&self.emitter);
+
+        tokio::spawn(async move {
+            for entry in &batch {
+                emitter.dispatch(Self::NAME, entry).await;
+            }
+        });
     }
 }
