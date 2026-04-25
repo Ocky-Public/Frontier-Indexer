@@ -249,7 +249,7 @@ async fn main() -> Result<(), anyhow::Error> {
             Package::World => {
                 // Owner Caps
                 indexer.sequential_pipeline(world::OwnerCapCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::OwnerCapHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::OwnerCapHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::OwnerCapTransferredHandler::new(&context), sequential.clone()).await?;
 
                 // Assemblies
