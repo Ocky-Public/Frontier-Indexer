@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -23,18 +23,35 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::system::StoredTableRecord;
 use crate::models::world::MoveGateConfig;
 use crate::models::world::StoredGateConfig;
+use crate::transports::Transport;
+
 use crate::AppContext;
 
 pub struct GateConfigHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<GateConfigAction>>,
 }
 
 impl GateConfigHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<GateConfigAction>>>) -> Self {
+        let emitter = Emitter::new(Self::routing, transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
+    }
+
+    fn routing(action: &GateConfigAction) -> Option<String> {
+        match action {
+            GateConfigAction::Register(_) => None,
+            GateConfigAction::Upsert(entry) => Some(entry.table_id.clone()),
+            GateConfigAction::Delete(id_str) => Some(id_str.clone()),
+        }
     }
 
     fn is_gate_config(&self, obj: &Object) -> bool {
@@ -198,10 +215,51 @@ impl Processor for GateConfigHandler {
 #[async_trait]
 impl Handler for GateConfigHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                GateConfigAction::Register(table) => {
+                    let current = batch.entry(table.table_id.clone());
+
+                    match current {
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                        _ => (),
+                    }
+                }
+                GateConfigAction::Upsert(config) => {
+                    let current = batch.entry(config.type_id.to_string());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            let GateConfigAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if config.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                GateConfigAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -211,42 +269,22 @@ impl Handler for GateConfigHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::gate_config::dsl::*;
 
-        let mut to_upsert: HashMap<String, &StoredGateConfig> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
+        let mut to_upsert: Vec<&StoredGateConfig> = vec![];
+        let mut to_delete: Vec<String> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
                 GateConfigAction::Register(table) => {
                     self.ctx.tables.add_table(conn, table).await?;
                 }
-                GateConfigAction::Upsert(config) => {
-                    let current = to_upsert.entry(config.type_id.to_string());
-
-                    match current {
-                        Entry::Occupied(mut entry) => {
-                            if config.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(config);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(config);
-                        }
-                    }
-                }
-                GateConfigAction::Delete(id_str) => {
-                    to_delete.insert(id_str.clone());
-                }
+                GateConfigAction::Upsert(config) => to_upsert.push(config),
+                GateConfigAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredGateConfig> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             diesel::insert_into(gate_config)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict((type_id, table_id))
                 .do_update()
                 .set((
@@ -267,5 +305,20 @@ impl Handler for GateConfigHandler {
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        if batch.is_empty() {
+            return;
+        }
+
+        let batch = batch.clone();
+        let emitter = Arc::clone(&self.emitter);
+
+        tokio::spawn(async move {
+            for entry in batch.values() {
+                emitter.dispatch(Self::NAME, entry).await;
+            }
+        });
     }
 }
