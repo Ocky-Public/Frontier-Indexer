@@ -114,9 +114,9 @@ impl Handler for OwnerCapHandler {
         for value in values {
             match value.clone() {
                 OwnerCapAction::Upsert(owner_cap) => {
-                    let entry = batch.entry(owner_cap.id.clone());
+                    let current = batch.entry(owner_cap.id.clone());
 
-                    match entry {
+                    match current {
                         Entry::Occupied(mut entry) => {
                             if matches!(entry.get(), OwnerCapAction::Delete(_)) {
                                 continue;
@@ -136,9 +136,9 @@ impl Handler for OwnerCapHandler {
                     }
                 }
                 OwnerCapAction::Delete(id_str) => {
-                    let entry = batch.entry(id_str.clone());
+                    let current = batch.entry(id_str.clone());
 
-                    match entry {
+                    match current {
                         Entry::Occupied(mut entry) => {
                             if matches!(entry.get(), OwnerCapAction::Upsert(_)) {
                                 entry.insert(value);

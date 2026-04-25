@@ -115,9 +115,9 @@ impl Handler for AssemblyHandler {
         for value in values {
             match value.clone() {
                 AssemblyAction::Upsert(assembly) => {
-                    let entry = batch.entry(assembly.id.clone());
+                    let current = batch.entry(assembly.id.clone());
 
-                    match entry {
+                    match current {
                         Entry::Occupied(mut entry) => {
                             if matches!(entry.get(), AssemblyAction::Delete(_)) {
                                 continue;
@@ -137,9 +137,9 @@ impl Handler for AssemblyHandler {
                     }
                 }
                 AssemblyAction::Delete(id_str) => {
-                    let entry = batch.entry(id_str.clone());
+                    let current = batch.entry(id_str.clone());
 
-                    match entry {
+                    match current {
                         Entry::Occupied(mut entry) => {
                             if matches!(entry.get(), AssemblyAction::Upsert(_)) {
                                 entry.insert(value);

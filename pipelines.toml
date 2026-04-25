@@ -1,10 +1,6 @@
 # Pipeline configuration for frontier-indexer.
 # Set a pipeline to false to exclude it from indexing.
 # When the PIPELINES environment variable is set it takes precedence over this file.
-#
-# Run scripts/generate-pipeline-config.sh to update this file after adding new pipelines.
-# Existing values are preserved; new pipelines are added as enabled = true.
-
 [pipelines]
 
 # Access
