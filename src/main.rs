@@ -263,7 +263,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::GateConfigHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateExtensionAuthorizedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::GateExtensionRevokedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::GateExtensionRevokedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateJumpedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::GateLinkedHandler::new(&context), sequential.clone()).await?;
