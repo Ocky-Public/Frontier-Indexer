@@ -8,6 +8,5 @@ where
 {
     fn id(&self) -> String;
 
-    async fn send(&self, pipeline: &'static str, routing_key: &str, item: &I)
-        -> anyhow::Result<()>;
+    async fn send(&self, pipeline: &'static str, item: &I) -> anyhow::Result<()>;
 }
