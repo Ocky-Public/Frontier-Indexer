@@ -23,7 +23,7 @@ pub struct GateCreatedHandler {
 }
 
 impl GateCreatedHandler {
-    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transports<StoredGateCreated>>>) -> Self {
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<StoredGateCreated>>>) -> Self {
         let emitter = Emitter::new(Self::routing, transports);
 
         Self {
