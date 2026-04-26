@@ -272,7 +272,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::GateUnlinkedHandler::new(&context, vec![]), sequential.clone()).await?;
 
                 // Network Nodes
-                indexer.sequential_pipeline(world::NetworkNodeCreatedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::NetworkNodeCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::NetworkNodeHandler::new(&context), sequential.clone()).await?;
 
                 // Storage Units
