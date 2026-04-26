@@ -289,7 +289,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
                 // Characters
                 indexer.sequential_pipeline(world::CharacterCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::CharacterHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::CharacterHandler::new(&context, vec![]), sequential.clone()).await?;
 
                 // Killmails
                 indexer.sequential_pipeline(world::KillmailHandler::new(&context), sequential.clone()).await?;

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -19,17 +19,25 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::world::StoredCharacter;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct CharacterHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<CharacterAction>>,
 }
 
 impl CharacterHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<CharacterAction>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_character(&self, obj: &Object) -> bool {
@@ -93,10 +101,49 @@ impl Processor for CharacterHandler {
 #[async_trait]
 impl Handler for CharacterHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                CharacterAction::Upsert(character) => {
+                    let current = batch.entry(character.id.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), CharacterAction::Delete(_)) {
+                                continue;
+                            }
+
+                            let CharacterAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if character.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                CharacterAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), CharacterAction::Upsert(_)) {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -106,38 +153,19 @@ impl Handler for CharacterHandler {
     ) -> anyhow::Result<usize> {
         use crate::schema::indexer::characters::dsl::*;
 
-        let mut to_upsert: HashMap<String, &StoredCharacter> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
+        let mut to_upsert: Vec<&StoredCharacter> = vec![];
+        let mut to_delete: Vec<String> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
-                CharacterAction::Upsert(character) => {
-                    let entry = to_upsert.entry(character.id.clone());
-                    match entry {
-                        Entry::Occupied(mut entry) => {
-                            if character.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(character);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(character);
-                        }
-                    }
-                }
-                CharacterAction::Delete(id_str) => {
-                    to_delete.insert(id_str.clone());
-                }
+                CharacterAction::Upsert(character) => to_upsert.push(character),
+                CharacterAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredCharacter> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             diesel::insert_into(characters)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict(id)
                 .do_update()
                 .set((
@@ -165,5 +193,20 @@ impl Handler for CharacterHandler {
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        if batch.is_empty() {
+            return;
+        }
+
+        let batch = batch.clone();
+        let emitter = Arc::clone(&self.emitter);
+
+        tokio::spawn(async move {
+            for entry in batch.values() {
+                emitter.dispatch(Self::NAME, entry).await;
+            }
+        });
     }
 }
