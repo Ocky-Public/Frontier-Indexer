@@ -279,7 +279,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::StorageUnitCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::StorageUnitExtensionAuthorizedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::StorageUnitExtensionRevokedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::StorageUnitHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::StorageUnitHandler::new(&context, vec![]), sequential.clone()).await?;
 
                 // Turrets
                 indexer.sequential_pipeline(world::TurretCreatedHandler::new(&context), sequential.clone()).await?;
