@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -20,18 +20,26 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::world::StoredExtensionFreeze;
 use crate::models::world::StoredTurret;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct TurretHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<TurretAction>>,
 }
 
 impl TurretHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<TurretAction>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_turret(&self, obj: &Object) -> bool {
@@ -154,10 +162,59 @@ impl Processor for TurretHandler {
 #[async_trait]
 impl Handler for TurretHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                TurretAction::Upsert(turret) => {
+                    let current = batch.entry(turret.id.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), TurretAction::Delete(_)) {
+                                continue;
+                            }
+
+                            let TurretAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if turret.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                TurretAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), TurretAction::Upsert(_)) {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                TurretAction::Freeze(freeze) => {
+                    let current = batch.entry(freeze.id.clone());
+
+                    match current {
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -165,43 +222,23 @@ impl Handler for TurretHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        let mut to_upsert: HashMap<String, &StoredTurret> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
-        let mut to_freeze = Vec::new();
+        let mut to_upsert: Vec<&StoredTurret> = vec![];
+        let mut to_delete: Vec<String> = vec![];
+        let mut to_freeze: Vec<&StoredExtensionFreeze> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
-                TurretAction::Upsert(turret) => {
-                    let entry = to_upsert.entry(turret.id.clone());
-
-                    match entry {
-                        Entry::Occupied(mut entry) => {
-                            if turret.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(turret);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(turret);
-                        }
-                    }
-                }
-                TurretAction::Delete(id_str) => {
-                    to_delete.insert(id_str.clone());
-                }
+                TurretAction::Upsert(turret) => to_upsert.push(turret),
+                TurretAction::Delete(id_str) => to_delete.push(id_str.clone()),
                 TurretAction::Freeze(freeze) => to_freeze.push(freeze),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredTurret> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             use crate::schema::indexer::turrets::dsl::*;
 
             diesel::insert_into(turrets)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict(id)
                 .do_update()
                 .set((
@@ -251,5 +288,20 @@ impl Handler for TurretHandler {
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        if batch.is_empty() {
+            return;
+        }
+
+        let batch = batch.clone();
+        let emitter = Arc::clone(&self.emitter);
+
+        tokio::spawn(async move {
+            for entry in batch.values() {
+                emitter.dispatch(Self::NAME, entry).await;
+            }
+        });
     }
 }
