@@ -277,7 +277,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
                 // Storage Units
                 indexer.sequential_pipeline(world::StorageUnitCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::StorageUnitExtensionAuthorizedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::StorageUnitExtensionAuthorizedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::StorageUnitExtensionRevokedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::StorageUnitHandler::new(&context), sequential.clone()).await?;
 
