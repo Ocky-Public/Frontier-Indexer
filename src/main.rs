@@ -302,7 +302,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::EnergyReservedHandler::new(&context, vec![]), sequential.clone()).await?;
 
                 // Fuel
-                indexer.sequential_pipeline(world::FuelBurningStartedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelBurningStartedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::FuelBurningStoppedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::FuelBurningUpdatedHandler::new(&context), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::FuelConfigHandler::new(&context), sequential.clone()).await?;
