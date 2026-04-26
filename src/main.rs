@@ -284,7 +284,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // Turrets
                 indexer.sequential_pipeline(world::TurretCreatedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::TurretExtensionAuthorizedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::TurretExtensionRevokedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::TurretExtensionRevokedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::TurretHandler::new(&context), sequential.clone()).await?;
 
                 // Characters
