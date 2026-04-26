@@ -10,20 +10,31 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::MoveFuelAction;
 use crate::models::world::MoveFuelEvent;
 use crate::models::world::StoredFuelBurningUpdated;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct FuelBurningUpdatedHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StoredFuelBurningUpdated>>,
 }
 
 impl FuelBurningUpdatedHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(
+        ctx: &AppContext,
+        transports: Vec<Arc<dyn Transport<StoredFuelBurningUpdated>>>,
+    ) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_fuel_burning_updated(&self, event: &Event) -> bool {
@@ -96,5 +107,20 @@ impl Handler for FuelBurningUpdatedHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        if batch.is_empty() {
+            return;
+        }
+
+        let batch = batch.clone();
+        let emitter = Arc::clone(&self.emitter);
+
+        tokio::spawn(async move {
+            for entry in &batch {
+                emitter.dispatch(Self::NAME, entry).await;
+            }
+        });
     }
 }
