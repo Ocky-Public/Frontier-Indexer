@@ -128,7 +128,7 @@ pub struct SandboxArgs {
     #[arg(
         long,
         env = "SANDBOX",
-        requires = "app_package_id",
+        requires = "app_package_ids",
         default_value_t = false
     )]
     pub enabled: bool,
