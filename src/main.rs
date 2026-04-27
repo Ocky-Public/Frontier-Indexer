@@ -317,7 +317,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::ItemBurnedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemDepositedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemDestroyedHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::ItemHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemMintedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemWithdrawnHandler::new(&context, vec![]), sequential.clone()).await?;
 
