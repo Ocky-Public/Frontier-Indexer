@@ -325,7 +325,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::LocationRevealedHandler::new(&context, vec![]), sequential.clone()).await?;
 
                 // Status
-                indexer.sequential_pipeline(world::StatusChangedHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::StatusChangedHandler::new(&context, vec![]), sequential.clone()).await?;
             }
         }
     }
