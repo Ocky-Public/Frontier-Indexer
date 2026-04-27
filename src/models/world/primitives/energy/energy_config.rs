@@ -9,7 +9,7 @@ use sui_types::collection_types::Table;
 use sui_types::dynamic_field::Field;
 use sui_types::object::Object;
 
-use crate::schema::indexer::energy_config;
+use crate::schema::energy_config;
 
 #[derive(Deserialize)]
 pub struct MoveEnergyConfig {

@@ -86,7 +86,7 @@ impl Handler for AssemblyCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_assembly_created::dsl::*;
+        use crate::schema::events_assembly_created::dsl::*;
 
         diesel::insert_into(events_assembly_created)
             .values(batch)

@@ -94,7 +94,7 @@ impl Handler for FuelDepositedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_fuel_deposited::dsl::*;
+        use crate::schema::events_fuel_deposited::dsl::*;
 
         diesel::insert_into(events_fuel_deposited)
             .values(batch)

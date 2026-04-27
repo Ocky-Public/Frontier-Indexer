@@ -86,7 +86,7 @@ impl Handler for GatePermitIssuedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_gate_permit_issued::dsl::*;
+        use crate::schema::events_gate_permit_issued::dsl::*;
 
         diesel::insert_into(events_gate_permit_issued)
             .values(batch)

@@ -7,7 +7,7 @@ use sui_sdk_types::Address;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::schema::indexer::events_owner_cap_created;
+use crate::schema::events_owner_cap_created;
 
 #[derive(Deserialize)]
 pub struct MoveOwnerCapCreated {

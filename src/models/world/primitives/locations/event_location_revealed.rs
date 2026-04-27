@@ -8,7 +8,7 @@ use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_location_revealed;
+use crate::schema::events_location_revealed;
 
 #[derive(Deserialize)]
 pub struct MoveLocationRevealed {

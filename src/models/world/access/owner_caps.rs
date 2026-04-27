@@ -6,7 +6,7 @@ use sui_sdk_types::Address;
 use sui_types::object::Object;
 use sui_types::object::Owner;
 
-use crate::schema::indexer::owner_caps;
+use crate::schema::owner_caps;
 
 #[derive(Deserialize)]
 pub struct MoveOwnerCap {

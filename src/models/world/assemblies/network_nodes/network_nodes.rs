@@ -12,7 +12,7 @@ use crate::models::world::MoveFuel;
 use crate::models::world::MoveLocation;
 use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::network_nodes;
+use crate::schema::network_nodes;
 
 use crate::AppContext;
 

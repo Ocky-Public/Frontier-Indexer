@@ -97,7 +97,7 @@ impl Handler for KillmailHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::killmails::dsl::*;
+        use crate::schema::killmails::dsl::*;
 
         diesel::insert_into(killmails)
             .values(batch)

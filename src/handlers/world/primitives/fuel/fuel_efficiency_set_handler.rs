@@ -86,7 +86,7 @@ impl Handler for FuelEfficiencySetHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_fuel_efficiency_set::dsl::*;
+        use crate::schema::events_fuel_efficiency_set::dsl::*;
 
         diesel::insert_into(events_fuel_efficiency_set)
             .values(batch)

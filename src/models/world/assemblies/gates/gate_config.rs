@@ -9,7 +9,7 @@ use sui_types::collection_types::Table;
 use sui_types::dynamic_field::Field;
 use sui_types::object::Object;
 
-use crate::schema::indexer::gate_config;
+use crate::schema::gate_config;
 
 #[derive(Deserialize)]
 pub struct MoveGateConfig {

@@ -8,7 +8,7 @@ use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_character_created;
+use crate::schema::events_character_created;
 
 #[derive(Deserialize)]
 pub struct MoveCharacterCreated {

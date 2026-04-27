@@ -97,7 +97,7 @@ impl Handler for FuelBurningStoppedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_fuel_burning_stopped::dsl::*;
+        use crate::schema::events_fuel_burning_stopped::dsl::*;
 
         diesel::insert_into(events_fuel_burning_stopped)
             .values(batch)

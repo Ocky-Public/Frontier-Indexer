@@ -86,7 +86,7 @@ impl Handler for CharacterCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_character_created::dsl::*;
+        use crate::schema::events_character_created::dsl::*;
 
         diesel::insert_into(events_character_created)
             .values(batch)

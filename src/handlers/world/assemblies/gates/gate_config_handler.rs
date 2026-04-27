@@ -259,7 +259,7 @@ impl Handler for GateConfigHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::gate_config::dsl::*;
+        use crate::schema::gate_config::dsl::*;
 
         let mut to_upsert: Vec<&StoredGateConfig> = vec![];
         let mut to_delete: Vec<String> = vec![];

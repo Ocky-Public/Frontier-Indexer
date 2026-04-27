@@ -12,7 +12,7 @@ use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
 use crate::models::Freezable;
 use crate::models::MoveTypeName;
-use crate::schema::indexer::gates;
+use crate::schema::gates;
 
 #[derive(Deserialize)]
 pub struct MoveGate {

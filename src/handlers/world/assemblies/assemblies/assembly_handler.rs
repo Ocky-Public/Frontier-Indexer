@@ -151,7 +151,7 @@ impl Handler for AssemblyHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::assemblies::dsl::*;
+        use crate::schema::assemblies::dsl::*;
 
         let mut to_upsert: Vec<&StoredAssembly> = vec![];
         let mut to_delete: Vec<String> = vec![];

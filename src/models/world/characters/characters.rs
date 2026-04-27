@@ -7,7 +7,7 @@ use sui_types::object::Object;
 
 use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::characters;
+use crate::schema::characters;
 
 #[derive(Deserialize)]
 pub struct MoveCharacter {

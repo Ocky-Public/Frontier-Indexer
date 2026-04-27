@@ -235,7 +235,7 @@ impl Handler for GateHandler {
         }
 
         if !to_upsert.is_empty() {
-            use crate::schema::indexer::gates::dsl::*;
+            use crate::schema::gates::dsl::*;
 
             diesel::insert_into(gates)
                 .values(to_upsert)
@@ -264,7 +264,7 @@ impl Handler for GateHandler {
         }
 
         if !to_freeze.is_empty() {
-            use crate::schema::indexer::extension_freezes::dsl::*;
+            use crate::schema::extension_freezes::dsl::*;
 
             diesel::insert_into(extension_freezes)
                 .values(to_freeze)
@@ -275,7 +275,7 @@ impl Handler for GateHandler {
         }
 
         if !to_delete.is_empty() {
-            use crate::schema::indexer::{extension_freezes, gates};
+            use crate::schema::{extension_freezes, gates};
 
             diesel::delete(gates::dsl::gates)
                 .filter(gates::dsl::id.eq_any(to_delete.clone()))

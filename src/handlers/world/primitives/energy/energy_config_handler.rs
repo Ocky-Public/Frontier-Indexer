@@ -257,7 +257,7 @@ impl Handler for EnergyConfigHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::energy_config::dsl::*;
+        use crate::schema::energy_config::dsl::*;
 
         let mut to_upsert: Vec<&StoredEnergyConfig> = vec![];
         let mut to_delete: Vec<String> = vec![];

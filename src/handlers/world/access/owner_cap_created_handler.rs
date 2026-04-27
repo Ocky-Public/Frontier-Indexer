@@ -86,7 +86,7 @@ impl Handler for OwnerCapCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_owner_cap_created::dsl::*;
+        use crate::schema::events_owner_cap_created::dsl::*;
 
         diesel::insert_into(events_owner_cap_created)
             .values(batch)

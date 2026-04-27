@@ -235,7 +235,7 @@ impl Handler for TurretHandler {
         }
 
         if !to_upsert.is_empty() {
-            use crate::schema::indexer::turrets::dsl::*;
+            use crate::schema::turrets::dsl::*;
 
             diesel::insert_into(turrets)
                 .values(to_upsert)
@@ -263,7 +263,7 @@ impl Handler for TurretHandler {
         }
 
         if !to_freeze.is_empty() {
-            use crate::schema::indexer::extension_freezes::dsl::*;
+            use crate::schema::extension_freezes::dsl::*;
 
             diesel::insert_into(extension_freezes)
                 .values(to_freeze)
@@ -274,7 +274,7 @@ impl Handler for TurretHandler {
         }
 
         if !to_delete.is_empty() {
-            use crate::schema::indexer::{extension_freezes, turrets};
+            use crate::schema::{extension_freezes, turrets};
 
             diesel::delete(turrets::dsl::turrets)
                 .filter(turrets::dsl::id.eq_any(to_delete.clone()))

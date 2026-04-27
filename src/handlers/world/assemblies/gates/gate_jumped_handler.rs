@@ -83,7 +83,7 @@ impl Handler for GateJumpedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_gate_jumped::dsl::*;
+        use crate::schema::events_gate_jumped::dsl::*;
 
         diesel::insert_into(events_gate_jumped)
             .values(batch)

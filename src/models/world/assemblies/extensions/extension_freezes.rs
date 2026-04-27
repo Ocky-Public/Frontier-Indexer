@@ -6,7 +6,7 @@ use sui_indexer_alt_framework::FieldCount;
 use sui_types::object::Object;
 
 use crate::models::Freezable;
-use crate::schema::indexer::extension_freezes;
+use crate::schema::extension_freezes;
 
 #[derive(Deserialize, Serialize, Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = extension_freezes)]

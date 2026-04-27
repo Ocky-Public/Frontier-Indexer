@@ -83,7 +83,7 @@ impl Handler for TurretCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_turret_created::dsl::*;
+        use crate::schema::events_turret_created::dsl::*;
 
         diesel::insert_into(events_turret_created)
             .values(batch)

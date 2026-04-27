@@ -12,7 +12,7 @@ use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
 use crate::models::Freezable;
 use crate::models::MoveTypeName;
-use crate::schema::indexer::storage_units;
+use crate::schema::storage_units;
 
 #[derive(Deserialize)]
 pub struct MoveStorageUnit {

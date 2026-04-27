@@ -151,7 +151,7 @@ impl Handler for OwnerCapHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::owner_caps::dsl::*;
+        use crate::schema::owner_caps::dsl::*;
 
         let mut to_upsert: Vec<&StoredOwnerCap> = vec![];
         let mut to_delete: Vec<String> = vec![];

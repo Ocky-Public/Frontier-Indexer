@@ -10,7 +10,7 @@ use sui_types::object::Object;
 
 use crate::models::world::MoveItemEntry;
 use crate::models::world::StoredInventoryEntry;
-use crate::schema::indexer::inventories;
+use crate::schema::inventories;
 
 #[derive(Deserialize)]
 pub struct MoveInventory {

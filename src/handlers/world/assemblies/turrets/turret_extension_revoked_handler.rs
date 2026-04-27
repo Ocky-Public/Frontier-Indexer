@@ -86,7 +86,7 @@ impl Handler for TurretExtensionRevokedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_turret_extension_revoked::dsl::*;
+        use crate::schema::events_turret_extension_revoked::dsl::*;
 
         diesel::insert_into(events_turret_extension_revoked)
             .values(batch)

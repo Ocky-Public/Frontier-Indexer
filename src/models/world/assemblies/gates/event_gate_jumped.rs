@@ -8,7 +8,7 @@ use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_gate_jumped;
+use crate::schema::events_gate_jumped;
 
 #[derive(Deserialize)]
 pub struct MoveGateJumped {

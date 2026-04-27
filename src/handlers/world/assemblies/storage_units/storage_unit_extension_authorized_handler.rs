@@ -86,7 +86,7 @@ impl Handler for StorageUnitExtensionAuthorizedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_storage_unit_extension_authorized::dsl::*;
+        use crate::schema::events_storage_unit_extension_authorized::dsl::*;
 
         diesel::insert_into(events_storage_unit_extension_authorized)
             .values(batch)

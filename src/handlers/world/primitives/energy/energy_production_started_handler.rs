@@ -86,7 +86,7 @@ impl Handler for EnergyProductionStartedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_energy_production_started::dsl::*;
+        use crate::schema::events_energy_production_started::dsl::*;
 
         diesel::insert_into(events_energy_production_started)
             .values(batch)

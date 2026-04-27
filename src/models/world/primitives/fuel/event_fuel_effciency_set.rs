@@ -6,7 +6,7 @@ use sui_indexer_alt_framework::FieldCount;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::schema::indexer::events_fuel_efficiency_set;
+use crate::schema::events_fuel_efficiency_set;
 
 #[derive(Deserialize)]
 pub struct MoveFuelEfficiencySet {

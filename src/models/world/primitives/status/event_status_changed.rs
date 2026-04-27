@@ -10,7 +10,7 @@ use crate::handlers::EventMeta;
 use crate::models::world::MoveAction;
 use crate::models::world::MoveStatus;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_status_changed;
+use crate::schema::events_status_changed;
 
 #[derive(Deserialize)]
 pub struct MoveStatusChanged {

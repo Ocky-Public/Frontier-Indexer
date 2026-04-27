@@ -151,7 +151,7 @@ impl Handler for CharacterHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::characters::dsl::*;
+        use crate::schema::characters::dsl::*;
 
         let mut to_upsert: Vec<&StoredCharacter> = vec![];
         let mut to_delete: Vec<String> = vec![];

@@ -196,7 +196,7 @@ impl Handler for InventoryHandler {
 
         if !to_upsert.is_empty() {
             {
-                use crate::schema::indexer::inventories::dsl::*;
+                use crate::schema::inventories::dsl::*;
                 diesel::insert_into(inventories)
                     .values(to_upsert.clone())
                     .on_conflict(id)
@@ -213,7 +213,7 @@ impl Handler for InventoryHandler {
             }
 
             for inventory in to_upsert {
-                use crate::schema::indexer::inventory_entries::dsl::*;
+                use crate::schema::inventory_entries::dsl::*;
 
                 let keys: Vec<i64> = inventory.entries.keys().cloned().collect();
                 let values: Vec<StoredInventoryEntry> =
@@ -243,7 +243,7 @@ impl Handler for InventoryHandler {
 
         if !to_delete.is_empty() {
             {
-                use crate::schema::indexer::inventories::dsl::*;
+                use crate::schema::inventories::dsl::*;
                 diesel::delete(inventories)
                     .filter(id.eq_any(to_delete.clone()))
                     .execute(conn)
@@ -251,7 +251,7 @@ impl Handler for InventoryHandler {
             }
 
             {
-                use crate::schema::indexer::inventory_entries::dsl::*;
+                use crate::schema::inventory_entries::dsl::*;
                 diesel::delete(inventory_entries)
                     .filter(inventory_id.eq_any(to_delete))
                     .execute(conn)

@@ -86,7 +86,7 @@ impl Handler for EnergyReservedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_energy_reserved::dsl::*;
+        use crate::schema::events_energy_reserved::dsl::*;
 
         diesel::insert_into(events_energy_reserved)
             .values(batch)

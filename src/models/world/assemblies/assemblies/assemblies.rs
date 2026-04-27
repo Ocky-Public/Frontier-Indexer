@@ -9,7 +9,7 @@ use crate::models::world::MoveAssemblyStatus;
 use crate::models::world::MoveLocation;
 use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::assemblies;
+use crate::schema::assemblies;
 
 #[derive(Deserialize)]
 pub struct MoveAssembly {

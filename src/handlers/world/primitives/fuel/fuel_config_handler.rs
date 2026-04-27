@@ -256,7 +256,7 @@ impl Handler for FuelConfigHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::fuel_config::dsl::*;
+        use crate::schema::fuel_config::dsl::*;
 
         let mut to_upsert: Vec<&StoredFuelConfig> = vec![];
         let mut to_delete: Vec<String> = vec![];

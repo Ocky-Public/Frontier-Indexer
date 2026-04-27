@@ -86,7 +86,7 @@ impl Handler for LocationRevealedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_location_revealed::dsl::*;
+        use crate::schema::events_location_revealed::dsl::*;
 
         diesel::insert_into(events_location_revealed)
             .values(batch)

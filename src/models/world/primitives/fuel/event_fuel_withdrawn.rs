@@ -6,7 +6,7 @@ use sui_indexer_alt_framework::FieldCount;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveFuelEvent;
-use crate::schema::indexer::events_fuel_withdrawn;
+use crate::schema::events_fuel_withdrawn;
 
 #[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_fuel_withdrawn)]

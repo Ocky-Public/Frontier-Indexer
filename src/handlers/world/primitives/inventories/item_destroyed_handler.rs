@@ -83,7 +83,7 @@ impl Handler for ItemDestroyedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_item_destroyed::dsl::*;
+        use crate::schema::events_item_destroyed::dsl::*;
 
         diesel::insert_into(events_item_destroyed)
             .values(batch)

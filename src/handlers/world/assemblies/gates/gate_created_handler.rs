@@ -83,7 +83,7 @@ impl Handler for GateCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_gate_created::dsl::*;
+        use crate::schema::events_gate_created::dsl::*;
 
         diesel::insert_into(events_gate_created)
             .values(batch)

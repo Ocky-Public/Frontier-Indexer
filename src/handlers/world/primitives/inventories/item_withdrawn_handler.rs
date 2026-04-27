@@ -83,7 +83,7 @@ impl Handler for ItemWithdrawnHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_item_withdrawn::dsl::*;
+        use crate::schema::events_item_withdrawn::dsl::*;
 
         diesel::insert_into(events_item_withdrawn)
             .values(batch)

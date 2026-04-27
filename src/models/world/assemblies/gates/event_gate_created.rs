@@ -9,7 +9,7 @@ use sui_types::event::Event;
 use crate::handlers::EventMeta;
 use crate::models::world::MoveStatus;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_gate_created;
+use crate::schema::events_gate_created;
 
 #[derive(Deserialize)]
 pub struct MoveGateCreated {

@@ -86,7 +86,7 @@ impl Handler for NetworkNodeCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_network_node_created::dsl::*;
+        use crate::schema::events_network_node_created::dsl::*;
 
         diesel::insert_into(events_network_node_created)
             .values(batch)

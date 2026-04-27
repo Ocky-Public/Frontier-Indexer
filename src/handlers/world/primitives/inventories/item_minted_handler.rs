@@ -83,7 +83,7 @@ impl Handler for ItemMintedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_item_minted::dsl::*;
+        use crate::schema::events_item_minted::dsl::*;
 
         diesel::insert_into(events_item_minted)
             .values(batch)

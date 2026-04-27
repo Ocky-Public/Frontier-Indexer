@@ -152,7 +152,7 @@ impl Handler for NetworkNodeHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::network_nodes::dsl::*;
+        use crate::schema::network_nodes::dsl::*;
 
         let mut to_upsert: Vec<&StoredNetworkNode> = vec![];
         let mut to_delete: Vec<String> = vec![];

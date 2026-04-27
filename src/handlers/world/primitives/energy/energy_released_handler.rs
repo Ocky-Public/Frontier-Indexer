@@ -86,7 +86,7 @@ impl Handler for EnergyReleasedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_energy_released::dsl::*;
+        use crate::schema::events_energy_released::dsl::*;
 
         diesel::insert_into(events_energy_released)
             .values(batch)

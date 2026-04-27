@@ -86,7 +86,7 @@ impl Handler for ExtensionFrozenHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_extension_frozen::dsl::*;
+        use crate::schema::events_extension_frozen::dsl::*;
 
         diesel::insert_into(events_extension_frozen)
             .values(batch)

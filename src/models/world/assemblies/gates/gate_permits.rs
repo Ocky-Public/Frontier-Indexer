@@ -6,7 +6,7 @@ use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
 use sui_types::object::Object;
 
-use crate::schema::indexer::gate_permits;
+use crate::schema::gate_permits;
 
 #[derive(Deserialize)]
 pub struct MoveGatePermit {

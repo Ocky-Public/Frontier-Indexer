@@ -12,7 +12,7 @@ use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
 use crate::models::Freezable;
 use crate::models::MoveTypeName;
-use crate::schema::indexer::turrets;
+use crate::schema::turrets;
 
 #[derive(Deserialize)]
 pub struct MoveTurret {

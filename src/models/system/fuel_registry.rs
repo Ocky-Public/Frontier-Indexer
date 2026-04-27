@@ -16,7 +16,7 @@ pub struct FuelRegistry {
 
 impl FuelRegistry {
     pub async fn load_from_db(conn: &mut Connection<'_>) -> Self {
-        use crate::schema::indexer::fuel_config::dsl::*;
+        use crate::schema::fuel_config::dsl::*;
 
         let records = fuel_config
             .load::<StoredFuelConfig>(conn)

@@ -4,7 +4,7 @@ use diesel::prelude::*;
 
 use sui_indexer_alt_framework::FieldCount;
 
-use crate::schema::indexer::inventory_entries;
+use crate::schema::inventory_entries;
 
 #[derive(Deserialize)]
 pub struct MoveItemEntry {

@@ -86,7 +86,7 @@ impl Handler for GateExtensionAuthorizedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_gate_extension_authorized::dsl::*;
+        use crate::schema::events_gate_extension_authorized::dsl::*;
 
         diesel::insert_into(events_gate_extension_authorized)
             .values(batch)

@@ -238,7 +238,7 @@ impl Handler for StorageUnitHandler {
         }
 
         if !to_upsert.is_empty() {
-            use crate::schema::indexer::storage_units::dsl::*;
+            use crate::schema::storage_units::dsl::*;
 
             diesel::insert_into(storage_units)
                 .values(to_upsert)
@@ -266,7 +266,7 @@ impl Handler for StorageUnitHandler {
         }
 
         if !to_freeze.is_empty() {
-            use crate::schema::indexer::extension_freezes::dsl::*;
+            use crate::schema::extension_freezes::dsl::*;
 
             diesel::insert_into(extension_freezes)
                 .values(to_freeze)
@@ -277,7 +277,7 @@ impl Handler for StorageUnitHandler {
         }
 
         if !to_delete.is_empty() {
-            use crate::schema::indexer::{extension_freezes, storage_units};
+            use crate::schema::{extension_freezes, storage_units};
 
             diesel::delete(storage_units::dsl::storage_units)
                 .filter(storage_units::dsl::id.eq_any(to_delete.clone()))

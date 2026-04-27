@@ -137,7 +137,7 @@ impl Handler for ItemHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::items::dsl::*;
+        use crate::schema::items::dsl::*;
 
         let mut to_upsert: Vec<&StoredItem> = vec![];
         let mut to_delete: Vec<String> = vec![];

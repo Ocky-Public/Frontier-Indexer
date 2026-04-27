@@ -7,7 +7,7 @@ use sui_sdk_types::Address;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::schema::indexer::events_energy_production_stopped;
+use crate::schema::events_energy_production_stopped;
 
 #[derive(Deserialize)]
 pub struct MoveEnergyProductionStopped {

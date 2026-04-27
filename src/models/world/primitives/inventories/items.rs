@@ -7,7 +7,7 @@ use sui_sdk_types::Address;
 use sui_types::object::Object;
 
 use crate::models::world::MoveLocation;
-use crate::schema::indexer::items;
+use crate::schema::items;
 
 #[derive(Deserialize)]
 pub struct MoveItem {

@@ -138,7 +138,7 @@ impl Handler for GatePermitHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::gate_permits::dsl::*;
+        use crate::schema::gate_permits::dsl::*;
 
         let mut to_upsert: Vec<&StoredGatePermit> = vec![];
         let mut to_delete: Vec<String> = vec![];

@@ -9,7 +9,7 @@ use diesel::query_dsl::methods::FilterDsl;
 use diesel::upsert::excluded;
 use diesel_async::RunQueryDsl;
 
-use crate::schema::indexer::system_table_registry;
+use crate::schema::system_table_registry;
 
 #[derive(Queryable, Serialize, Insertable, Selectable, Clone, Debug)]
 #[diesel(table_name = system_table_registry)]
@@ -30,7 +30,7 @@ pub struct TableRegistry {
 
 impl TableRegistry {
     pub async fn load_from_db(conn: &mut Connection<'_>) -> Self {
-        use crate::schema::indexer::system_table_registry::dsl::*;
+        use crate::schema::system_table_registry::dsl::*;
 
         let records = system_table_registry
             .load::<StoredTableRecord>(conn)
@@ -53,7 +53,7 @@ impl TableRegistry {
         conn: &mut Connection<'_>,
         record: &StoredTableRecord,
     ) -> QueryResult<()> {
-        use crate::schema::indexer::system_table_registry::dsl::*;
+        use crate::schema::system_table_registry::dsl::*;
 
         diesel::insert_into(system_table_registry)
             .values(record)

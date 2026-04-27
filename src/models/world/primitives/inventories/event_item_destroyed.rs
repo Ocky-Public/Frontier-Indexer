@@ -8,7 +8,7 @@ use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_item_destroyed;
+use crate::schema::events_item_destroyed;
 
 #[derive(Deserialize)]
 pub struct MoveItemDestroyed {

@@ -8,7 +8,7 @@ use sui_sdk_types::Address;
 use sui_types::object::Object;
 
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::killmails;
+use crate::schema::killmails;
 
 #[derive(Deserialize, Debug, Clone, Copy, Display, EnumString, AsRefStr)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
