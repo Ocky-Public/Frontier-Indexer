@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.extension_freezes (
+CREATE TABLE IF NOT EXISTS extension_freezes (
   id          VARCHAR(66)   PRIMARY KEY,
   owner_id    VARCHAR(66)   NOT NULL,
   package_id  VARCHAR(66)   NOT NULL,

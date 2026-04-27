@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.gate_config (
+CREATE TABLE IF NOT EXISTS gate_config (
   table_id            VARCHAR(66)   NOT NULL,
   type_id             BIGINT        NOT NULL,
   distance            BIGINT        NOT NULL,

@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_item_destroyed;
+DROP TABLE IF EXISTS events_item_destroyed;

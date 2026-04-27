@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_extension_frozen;
+DROP TABLE IF EXISTS events_extension_frozen;

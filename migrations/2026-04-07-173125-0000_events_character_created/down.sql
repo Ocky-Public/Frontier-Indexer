@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_character_created;
+DROP TABLE IF EXISTS events_character_created;

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.events_item_minted (
+CREATE TABLE IF NOT EXISTS events_item_minted (
   event_id          VARCHAR(66)   NOT NULL,
   occurred_at       TIMESTAMPTZ   NOT NULL,
   item_id           VARCHAR(20)   NOT NULL,
@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS indexer.events_item_minted (
   PRIMARY KEY (event_id, occurred_at)
 );
 
-SELECT public.create_hypertable('indexer.events_item_minted', 'occurred_at');
+SELECT public.create_hypertable('events_item_minted', 'occurred_at');

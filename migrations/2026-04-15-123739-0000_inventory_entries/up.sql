@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.inventory_entries (
+CREATE TABLE IF NOT EXISTS inventory_entries (
   inventory_id        VARCHAR(66)   NOT NULL,
   type_id             BIGINT        NOT NULL,
   item_id             VARCHAR(20)   NOT NULL,

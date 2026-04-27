@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.assemblies (
+CREATE TABLE IF NOT EXISTS assemblies (
   id                  VARCHAR(66) PRIMARY KEY,
   item_id             VARCHAR(20) NOT NULL,
   tenant              TEXT        NOT NULL,

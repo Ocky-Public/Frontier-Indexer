@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_location_revealed;
+DROP TABLE IF EXISTS events_location_revealed;

@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_energy_reserved;
+DROP TABLE IF EXISTS events_energy_reserved;

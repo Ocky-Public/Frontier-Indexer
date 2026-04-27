@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.characters;
+DROP TABLE IF EXISTS characters;

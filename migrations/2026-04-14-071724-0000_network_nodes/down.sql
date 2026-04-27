@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.network_nodes;
+DROP TABLE IF EXISTS network_nodes;

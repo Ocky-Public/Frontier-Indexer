@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.extension_freezes;
+DROP TABLE IF EXISTS extension_freezes;

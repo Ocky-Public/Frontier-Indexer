@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.events_gate_unlinked (
+CREATE TABLE IF NOT EXISTS events_gate_unlinked (
   event_id            VARCHAR(100) NOT NULL,
   occurred_at         TIMESTAMPTZ NOT NULL,
   departure_id        VARCHAR(66) NOT NULL,
@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS indexer.events_gate_unlinked (
   PRIMARY KEY (event_id, occurred_at)
 );
 
-SELECT public.create_hypertable('indexer.events_gate_unlinked', 'occurred_at');
+SELECT public.create_hypertable('events_gate_unlinked', 'occurred_at');

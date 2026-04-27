@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_turret_created;
+DROP TABLE IF EXISTS events_turret_created;

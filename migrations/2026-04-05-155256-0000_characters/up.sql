@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.characters (
+CREATE TABLE IF NOT EXISTS characters (
   id                  VARCHAR(66) PRIMARY KEY,
   item_id             VARCHAR(20) NOT NULL,
   tenant              TEXT        NOT NULL,

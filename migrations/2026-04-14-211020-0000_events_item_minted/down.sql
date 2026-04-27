@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_item_minted;
+DROP TABLE IF EXISTS events_item_minted;

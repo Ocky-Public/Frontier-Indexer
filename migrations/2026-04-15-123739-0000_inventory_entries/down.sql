@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.inventory_entries;
+DROP TABLE IF EXISTS inventory_entries;

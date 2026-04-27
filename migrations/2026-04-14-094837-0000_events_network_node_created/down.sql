@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_network_node_created;
+DROP TABLE IF EXISTS events_network_node_created;

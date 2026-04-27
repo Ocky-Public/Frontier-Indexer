@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_fuel_withdrawn;
+DROP TABLE IF EXISTS events_fuel_withdrawn;

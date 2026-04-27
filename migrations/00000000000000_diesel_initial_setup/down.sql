@@ -1,3 +1,2 @@
-DROP FUNCTION IF EXISTS indexer.diesel_manage_updated_at(_tbl regclass);
-DROP FUNCTION IF EXISTS indexer.diesel_set_updated_at();
-DROP SCHEMA IF EXISTS indexer;
+DROP FUNCTION IF EXISTS diesel_manage_updated_at(_tbl regclass);
+DROP FUNCTION IF EXISTS diesel_set_updated_at();

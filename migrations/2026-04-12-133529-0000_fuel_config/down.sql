@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.fuel_config;
+DROP TABLE IF EXISTS fuel_config;

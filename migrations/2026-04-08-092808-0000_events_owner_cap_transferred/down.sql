@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_owner_cap_transferred;
+DROP TABLE IF EXISTS events_owner_cap_transferred;

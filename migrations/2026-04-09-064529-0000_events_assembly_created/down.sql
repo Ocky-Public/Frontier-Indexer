@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_assembly_created;
+DROP TABLE IF EXISTS events_assembly_created;

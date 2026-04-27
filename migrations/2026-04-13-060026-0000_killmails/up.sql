@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE IF NOT EXISTS indexer.killmails (
+CREATE TABLE IF NOT EXISTS killmails (
   id                VARCHAR(66) NOT NULL,
   kill_id           VARCHAR(20) NOT NULL,
   tenant            TEXT        NOT NULL,
@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS indexer.killmails (
   PRIMARY KEY (id, occurred_at)
 );
 
-SELECT public.create_hypertable('indexer.killmails', 'occurred_at');
+SELECT public.create_hypertable('killmails', 'occurred_at');

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.events_network_node_created (
+CREATE TABLE IF NOT EXISTS events_network_node_created (
   event_id      VARCHAR(100)  NOT NULL,
   occurred_at   TIMESTAMPTZ   NOT NULL,
   id            VARCHAR(66)   NOT NULL,
@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS indexer.events_network_node_created (
   PRIMARY KEY (event_id, occurred_at)
 );
 
-SELECT public.create_hypertable('indexer.events_network_node_created', 'occurred_at');
+SELECT public.create_hypertable('events_network_node_created', 'occurred_at');

@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.killmails;
+DROP TABLE IF EXISTS killmails;

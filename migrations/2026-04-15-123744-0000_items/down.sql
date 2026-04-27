@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.items;
+DROP TABLE IF EXISTS items;

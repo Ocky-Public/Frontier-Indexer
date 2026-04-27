@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.fuel_config (
+CREATE TABLE IF NOT EXISTS fuel_config (
   table_id            VARCHAR(66)   NOT NULL,
   type_id             BIGINT        NOT NULL,
   efficiency          BIGINT        NOT NULL,
