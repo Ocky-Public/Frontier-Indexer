@@ -10,18 +10,26 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredItemDeposited;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct ItemDepositedHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StoredItemDeposited>>,
 }
 
 impl ItemDepositedHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<StoredItemDeposited>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_item_deposited(&self, event: &Event) -> bool {
@@ -85,5 +93,9 @@ impl Handler for ItemDepositedHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }
