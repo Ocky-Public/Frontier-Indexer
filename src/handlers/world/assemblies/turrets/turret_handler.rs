@@ -291,17 +291,6 @@ impl Handler for TurretHandler {
     }
 
     async fn post_commit(&self, batch: &Self::Batch) {
-        if batch.is_empty() {
-            return;
-        }
-
-        let batch = batch.clone();
-        let emitter = Arc::clone(&self.emitter);
-
-        tokio::spawn(async move {
-            for entry in batch.values() {
-                emitter.dispatch(Self::NAME, entry).await;
-            }
-        });
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }
