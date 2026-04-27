@@ -310,7 +310,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::FuelDepositedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::FuelEfficiencyRemovedHandler::new(&context, vec![]), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::FuelEfficiencySetHandler::new(&context, vec![]), sequential.clone()).await?;
-                indexer.sequential_pipeline(world::FuelWithdrawnHandler::new(&context), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::FuelWithdrawnHandler::new(&context, vec![]), sequential.clone()).await?;
 
                 // Inventories
                 indexer.sequential_pipeline(world::InventoryHandler::new(&context), sequential.clone()).await?;
