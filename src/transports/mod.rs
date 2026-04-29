@@ -9,6 +9,11 @@ pub mod nats;
 pub mod redis;
 pub mod socketio;
 
+pub use amqp::*;
+pub use nats::*;
+pub use redis::*;
+pub use socketio::*;
+
 #[async_trait]
 pub trait Routing<I>: Send + Sync + 'static
 where
