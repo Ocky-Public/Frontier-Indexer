@@ -47,6 +47,7 @@ async fn main() -> Result<(), anyhow::Error> {
         ingestion,
         network,
         packages,
+        transport_config,
         sandbox,
     } = AppConfig::parse();
 

@@ -147,6 +147,57 @@ pub struct SandboxArgs {
 }
 
 #[derive(Parser)]
+pub struct AmqpConfig {
+    #[arg(long, env = "AMQP_URL")]
+    pub amqp_url: Option<String>,
+
+    #[arg(long, env = "AMQP_EXCHANGE", default_value = "indexer")]
+    pub amqp_exchange: String,
+
+    #[arg(long, env = "AMQP_POOL_SIZE", default_value_t = 10)]
+    pub amqp_pool_size: usize,
+}
+
+#[derive(Parser)]
+pub struct NatsConfig {
+    #[arg(long, env = "NATS_URL")]
+    pub nats_url: Option<String>,
+
+    #[arg(long, env = "NATS_SUBJECT_PREFIX", default_value = "indexer")]
+    pub nats_subject_prefix: String,
+}
+
+#[derive(Parser)]
+pub struct RedisConfig {
+    #[arg(long, env ="REDIS_URL")]
+    pub redis_url: Option<String>,
+
+    #[arg(long, env = "REDIS_CHANNEL_PREFIX", default_value = "indexer")]
+    pub redis_channel_prefix: String,
+}
+
+#[derive(Parser)]
+pub struct SocketIoConfig {
+    #[arg(long, env = "SOCKET_IO_URL")]
+    pub socketio_url: Option<SocketAddr>,
+}
+
+#[derive(Parser)]
+pub struct TransportConfig {
+    #[command(flatten)]
+    pub amqp: AmqpConfig,
+
+    #[command(flatten)]
+    pub nats: NatsConfig,
+
+    #[command(flatten)]
+    pub redis: RedisConfig,
+
+    #[command(flatten)]
+    pub socketio: SocketIoConfig,
+}
+
+#[derive(Parser)]
 pub struct AppConfig {
     #[command(flatten)]
     pub db_config: DbConfig,
@@ -168,6 +219,9 @@ pub struct AppConfig {
 
     #[arg(long, env = "METRICS_ADDRESS", default_value = "0.0.0.0:9184")]
     pub metrics_address: SocketAddr,
+
+    #[command(flatten)]
+    pub transport_config: TransportConfig,
 
     #[command(flatten)]
     pub sandbox: SandboxArgs,
