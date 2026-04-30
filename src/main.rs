@@ -25,9 +25,6 @@ use indexer::{AppContext, AppEnv};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
-pub mod config;
-pub mod pipelines;
-
 pub use config::*;
 pub use pipelines::*;
 

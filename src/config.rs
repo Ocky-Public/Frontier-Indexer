@@ -2,7 +2,7 @@ use clap::Parser;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use indexer::AppEnv;
+use crate::AppEnv;
 
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum Package {

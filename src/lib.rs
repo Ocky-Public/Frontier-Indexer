@@ -17,8 +17,10 @@ use sui_types::transaction::TransactionDataAPI;
 use crate::models::system::FuelRegistry;
 use crate::models::system::TableRegistry;
 
+pub mod config;
 pub mod handlers;
 pub mod models;
+pub mod pipelines;
 pub mod sandbox;
 pub mod schema;
 pub mod transports;
