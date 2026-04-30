@@ -5,11 +5,13 @@ use crate::handlers::world::*;
 use crate::models::world::*;
 
 pub mod amqp;
+pub mod init;
 pub mod nats;
 pub mod redis;
 pub mod socketio;
 
 pub use amqp::*;
+pub use init::*;
 pub use nats::*;
 pub use redis::*;
 pub use socketio::*;
