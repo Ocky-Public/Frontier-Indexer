@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::handlers::world::*;
 use crate::models::world::*;
-use crate::transports::{Routing, Transport};
+use crate::transports::Routing;
 
 pub struct NatsTransport {
     id: String,
@@ -34,20 +34,6 @@ impl NatsTransport {
         let payload = serde_json::to_vec(item)?;
         self.client.publish(subject, payload.into()).await?;
         Ok(())
-    }
-}
-
-#[async_trait]
-impl<I: Serialize + Send + Sync + 'static> Transport<I> for NatsTransport
-where
-    NatsTransport: Routing<I>,
-{
-    fn id(&self) -> String {
-        return self.id.clone();
-    }
-
-    async fn send(&self, pipeline: &'static str, item: &I) -> anyhow::Result<()> {
-        <Self as Routing<I>>::send(self, pipeline, item).await
     }
 }
 

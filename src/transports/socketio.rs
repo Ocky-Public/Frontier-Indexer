@@ -4,7 +4,7 @@ use socketioxide::SocketIo;
 
 use crate::handlers::world::*;
 use crate::models::world::*;
-use crate::transports::{Routing, Transport};
+use crate::transports::Routing;
 
 pub struct SocketIoTransport {
     id: String,
@@ -27,20 +27,6 @@ impl SocketIoTransport {
     ) -> anyhow::Result<()> {
         let _ = self.io.to(room).emit(event, item);
         Ok(())
-    }
-}
-
-#[async_trait]
-impl<I: Serialize + Send + Sync + 'static> Transport<I> for SocketIoTransport
-where
-    SocketIoTransport: Routing<I>,
-{
-    fn id(&self) -> String {
-        return self.id.clone();
-    }
-
-    async fn send(&self, pipeline: &'static str, item: &I) -> anyhow::Result<()> {
-        <Self as Routing<I>>::send(self, pipeline, item).await
     }
 }
 

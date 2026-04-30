@@ -88,7 +88,16 @@ mod private {
 
 #[async_trait]
 pub trait Transport<I>: private::Router {
-    fn id(&self) -> String;
-
     async fn send(&self, pipeline: &'static str, item: &I) -> anyhow::Result<()>;
+}
+
+#[async_trait]
+impl<T, I> Transport<I> for T
+where
+    T: private::Router + Routing<I>,
+    I: Serialize + Send + Sync + 'static,
+{
+    async fn send(&self, pipeline: &'static str, item: &I) -> anyhow::Result<()> {
+        <Self as Routing<I>>::send(self, pipeline, item).await
+    }
 }

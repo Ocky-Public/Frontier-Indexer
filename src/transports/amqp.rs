@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::handlers::world::*;
 use crate::models::world::*;
-use crate::transports::{Routing, Transport};
+use crate::transports::Routing;
 
 pub struct AmqpTransport {
     id: String,
@@ -51,7 +51,11 @@ impl AmqpTransport {
         })
     }
 
-    async fn send<I: Serialize + Send + Sync + 'static>(&self, routing: String, item: &I) -> anyhow::Result<()> {
+    async fn send<I: Serialize + Send + Sync + 'static>(
+        &self,
+        routing: String,
+        item: &I,
+    ) -> anyhow::Result<()> {
         let amqp_key = format!("indexer.{}", routing);
         let payload = serde_json::to_vec(item)?;
         let conn = self.pool.get().await?;
@@ -71,20 +75,6 @@ impl AmqpTransport {
             .await?; // second await = broker publisher-confirm ack
 
         Ok(())
-    }
-}
-
-#[async_trait]
-impl<I: Serialize + Send + Sync + 'static> Transport<I> for AmqpTransport
-where
-    AmqpTransport: Routing<I>,
-{
-    fn id(&self) -> String {
-        return self.id.clone();
-    }
-
-    async fn send(&self, pipeline: &'static str, item: &I) -> anyhow::Result<()> {
-        <Self as Routing<I>>::send(self, pipeline, item).await
     }
 }
 

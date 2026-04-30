@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::handlers::world::*;
 use crate::models::world::*;
-use crate::transports::{Routing, Transport};
+use crate::transports::{Routing};
 
 pub struct RedisTransport {
     id: String,
@@ -37,20 +37,6 @@ impl RedisTransport {
         let mut conn = self.manager.clone();
         redis::AsyncCommands::publish::<_, _, ()>(&mut conn, &channel, &payload).await?;
         Ok(())
-    }
-}
-
-#[async_trait]
-impl<I: Serialize + Send + Sync + 'static> Transport<I> for RedisTransport
-where
-    RedisTransport: Routing<I>,
-{
-    fn id(&self) -> String {
-        return self.id.clone();
-    }
-
-    async fn send(&self, pipeline: &'static str, item: &I) -> anyhow::Result<()> {
-        <Self as Routing<I>>::send(self, pipeline, item).await
     }
 }
 
