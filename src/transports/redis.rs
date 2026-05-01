@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::handlers::world::*;
 use crate::models::world::*;
-use crate::transports::{Routing};
+use crate::transports::Routing;
 
 pub struct RedisTransport {
     id: String,
@@ -41,16 +41,87 @@ impl RedisTransport {
 }
 
 // Owner Caps
-impl Routing<StoredOwnerCapCreated> for RedisTransport {}
-impl Routing<OwnerCapAction> for RedisTransport {}
-impl Routing<StoredOwnerCapTransferred> for RedisTransport {}
+#[async_trait]
+impl Routing<StoredOwnerCapCreated> for RedisTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredOwnerCapCreated,
+    ) -> anyhow::Result<()> {
+        let channel = format!("{}:{}:{}", item.object_id, "owner_cap", "created");
+        self.send(channel, item).await
+    }
+}
+
+#[async_trait]
+impl Routing<OwnerCapAction> for RedisTransport {
+    async fn send(&self, _pipeline: &'static str, action: &OwnerCapAction) -> anyhow::Result<()> {
+        match action {
+            OwnerCapAction::Upsert(item) => {
+                let channel = format!("{}:{}:{}", item.object_id, "owner_cap", "updated");
+                self.send(channel, item).await
+            }
+            OwnerCapAction::Delete(id_str) => {
+                let channel = format!("{}:{}:{}", id_str, "owner_cap", "deleted");
+                self.send(channel, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredOwnerCapTransferred> for RedisTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredOwnerCapTransferred,
+    ) -> anyhow::Result<()> {
+        let channel = format!("{}:{}:{}", item.id, "owner_cap", "transferred");
+        self.send(channel, item).await
+    }
+}
 
 // Assemblies
-impl Routing<StoredAssemblyCreated> for RedisTransport {}
-impl Routing<AssemblyAction> for RedisTransport {}
+#[async_trait]
+impl Routing<StoredAssemblyCreated> for RedisTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredAssemblyCreated,
+    ) -> anyhow::Result<()> {
+        let channel = format!("{}:{}:{}", item.id, "assembly", "created");
+        self.send(channel, item).await
+    }
+}
+
+#[async_trait]
+impl Routing<AssemblyAction> for RedisTransport {
+    async fn send(&self, _pipeline: &'static str, action: &AssemblyAction) -> anyhow::Result<()> {
+        match action {
+            AssemblyAction::Upsert(item) => {
+                let channel = format!("{}:{}:{}", item.id, "assembly", "updated");
+                self.send(channel, item).await
+            }
+            AssemblyAction::Delete(id_str) => {
+                let channel = format!("{}:{}:{}", id_str, "assembly", "deleted");
+                self.send(channel, id_str).await
+            }
+        }
+    }
+}
 
 // Extensions
-impl Routing<StoredExtensionFrozen> for RedisTransport {}
+#[async_trait]
+impl Routing<StoredExtensionFrozen> for RedisTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredExtensionFrozen,
+    ) -> anyhow::Result<()> {
+        let channel = format!("{}:{}:{}", item.id, "extension", "frozen");
+        self.send(channel, item).await
+    }
+}
 
 // Gates
 impl Routing<GateConfigAction> for RedisTransport {}
