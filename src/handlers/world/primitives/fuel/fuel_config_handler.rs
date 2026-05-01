@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use move_core_types::account_address::AccountAddress;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -22,18 +23,27 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::system::StoredTableRecord;
 use crate::models::world::MoveFuelConfig;
 use crate::models::world::StoredFuelConfig;
+use crate::transports::Transport;
+
 use crate::AppContext;
 
 pub struct FuelConfigHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<FuelConfigAction>>,
 }
 
 impl FuelConfigHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<FuelConfigAction>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_fuel_config(&self, obj: &Object) -> bool {
@@ -101,7 +111,7 @@ impl FuelConfigHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum FuelConfigAction {
     Register(StoredTableRecord),
     Upsert(StoredFuelConfig),
@@ -194,10 +204,51 @@ impl Processor for FuelConfigHandler {
 #[async_trait]
 impl Handler for FuelConfigHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                FuelConfigAction::Register(table) => {
+                    let current = batch.entry(table.table_id.clone());
+
+                    match current {
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                        _ => (),
+                    }
+                }
+                FuelConfigAction::Upsert(config) => {
+                    let current = batch.entry(config.type_id.to_string());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            let FuelConfigAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if config.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                FuelConfigAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -205,44 +256,24 @@ impl Handler for FuelConfigHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::fuel_config::dsl::*;
+        use crate::schema::fuel_config::dsl::*;
 
-        let mut to_upsert: HashMap<String, &StoredFuelConfig> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
+        let mut to_upsert: Vec<&StoredFuelConfig> = vec![];
+        let mut to_delete: Vec<String> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
                 FuelConfigAction::Register(table) => {
                     self.ctx.tables.add_table(conn, table).await?;
                 }
-                FuelConfigAction::Upsert(config) => {
-                    let current = to_upsert.entry(config.type_id.to_string());
-
-                    match current {
-                        Entry::Occupied(mut entry) => {
-                            if config.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(config);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(config);
-                        }
-                    }
-                }
-                FuelConfigAction::Delete(id_str) => {
-                    to_delete.insert(id_str.clone());
-                }
+                FuelConfigAction::Upsert(config) => to_upsert.push(config),
+                FuelConfigAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredFuelConfig> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             diesel::insert_into(fuel_config)
-                .values(final_values.clone())
+                .values(to_upsert.clone())
                 .on_conflict((type_id, table_id))
                 .do_update()
                 .set((
@@ -254,7 +285,7 @@ impl Handler for FuelConfigHandler {
                 .execute(conn)
                 .await?;
 
-            for record in final_values {
+            for record in to_upsert {
                 self.ctx.fuels.add_fuel(record);
             }
         }
@@ -267,5 +298,9 @@ impl Handler for FuelConfigHandler {
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -12,7 +12,7 @@ use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
 use crate::models::Freezable;
 use crate::models::MoveTypeName;
-use crate::schema::indexer::storage_units;
+use crate::schema::storage_units;
 
 #[derive(Deserialize)]
 pub struct MoveStorageUnit {
@@ -28,7 +28,7 @@ pub struct MoveStorageUnit {
     pub extension: Option<MoveTypeName>,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = storage_units)]
 pub struct StoredStorageUnit {
     pub id: String,

@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_gate_extension_revoked;
+DROP TABLE IF EXISTS events_gate_extension_revoked;

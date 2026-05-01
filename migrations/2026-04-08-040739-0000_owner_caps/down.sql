@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.owner_caps;
+DROP TABLE IF EXISTS owner_caps;

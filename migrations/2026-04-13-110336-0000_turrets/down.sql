@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.turrets;
+DROP TABLE IF EXISTS turrets;

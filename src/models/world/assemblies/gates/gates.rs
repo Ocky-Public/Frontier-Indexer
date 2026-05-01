@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -12,7 +12,7 @@ use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
 use crate::models::Freezable;
 use crate::models::MoveTypeName;
-use crate::schema::indexer::gates;
+use crate::schema::gates;
 
 #[derive(Deserialize)]
 pub struct MoveGate {
@@ -28,7 +28,7 @@ pub struct MoveGate {
     pub extension: Option<MoveTypeName>,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = gates)]
 pub struct StoredGate {
     pub id: String,

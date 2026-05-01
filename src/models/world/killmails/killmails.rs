@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, Display, EnumString};
 
 use sui_indexer_alt_framework::FieldCount;
@@ -8,7 +8,7 @@ use sui_sdk_types::Address;
 use sui_types::object::Object;
 
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::killmails;
+use crate::schema::killmails;
 
 #[derive(Deserialize, Debug, Clone, Copy, Display, EnumString, AsRefStr)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -30,7 +30,7 @@ pub struct MoveKillmail {
     pub solar_system_id: MoveTenantItemId,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = killmails)]
 pub struct StoredKillmail {
     pub id: String,

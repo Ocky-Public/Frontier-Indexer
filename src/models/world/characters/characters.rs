@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
@@ -7,7 +7,7 @@ use sui_types::object::Object;
 
 use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::characters;
+use crate::schema::characters;
 
 #[derive(Deserialize)]
 pub struct MoveCharacter {
@@ -19,7 +19,7 @@ pub struct MoveCharacter {
     pub owner_cap_id: Address,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = characters)]
 pub struct StoredCharacter {
     pub id: String,

@@ -1,12 +1,12 @@
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
 use sui_types::object::Object;
 use sui_types::object::Owner;
 
-use crate::schema::indexer::owner_caps;
+use crate::schema::owner_caps;
 
 #[derive(Deserialize)]
 pub struct MoveOwnerCap {
@@ -14,7 +14,7 @@ pub struct MoveOwnerCap {
     pub authorized_object_id: Address,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = owner_caps)]
 pub struct StoredOwnerCap {
     pub id: String,

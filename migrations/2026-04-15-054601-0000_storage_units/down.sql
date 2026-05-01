@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.storage_units
+DROP TABLE IF EXISTS storage_units

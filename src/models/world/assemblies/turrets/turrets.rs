@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -12,7 +12,7 @@ use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
 use crate::models::Freezable;
 use crate::models::MoveTypeName;
-use crate::schema::indexer::turrets;
+use crate::schema::turrets;
 
 #[derive(Deserialize)]
 pub struct MoveTurret {
@@ -27,7 +27,7 @@ pub struct MoveTurret {
     pub extension: Option<MoveTypeName>,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = turrets)]
 pub struct StoredTurret {
     pub id: String,

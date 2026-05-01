@@ -10,18 +10,29 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredOwnerCapCreated;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct OwnerCapCreatedHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StoredOwnerCapCreated>>,
 }
 
 impl OwnerCapCreatedHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(
+        ctx: &AppContext,
+        transports: Vec<Arc<dyn Transport<StoredOwnerCapCreated>>>,
+    ) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_owner_cap_created(&self, event: &Event) -> bool {
@@ -75,7 +86,7 @@ impl Handler for OwnerCapCreatedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_owner_cap_created::dsl::*;
+        use crate::schema::events_owner_cap_created::dsl::*;
 
         diesel::insert_into(events_owner_cap_created)
             .values(batch)
@@ -85,5 +96,9 @@ impl Handler for OwnerCapCreatedHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

@@ -1,0 +1,84 @@
+# Pipeline configuration for frontier-indexer.
+# Set a pipeline to false to exclude it from indexing.
+# When the PIPELINES environment variable is set it takes precedence over this file.
+[pipelines]
+
+# Access
+owner_cap_created = true
+owner_caps = true
+owner_cap_transferred = true
+
+# Assemblies
+assembly_created = true
+assemblies = true
+
+# Extensions
+extension_frozen = true
+
+# Gates
+gate_config = true
+gate_created = true
+gate_extension_authorized = true
+gate_extension_revoked = true
+gates = true
+gate_jumped = true
+gate_linked = true
+gate_unlinked = true
+gate_permits = true
+gate_permit_issued = true
+
+# Network Nodes
+network_node_created = true
+network_nodes = true
+
+# Storage Units
+storage_unit_created = true
+storage_unit_extension_authorized = true
+storage_unit_extension_revoked = true
+storage_units = true
+
+# Turrets
+turret_created = true
+turret_extension_authorized = true
+turret_extension_revoked = true
+turrets = true
+
+# Characters
+character_created = true
+characters = true
+
+# Killmails
+killmails = true
+
+# Energy
+energy_config = true
+energy_production_started = true
+energy_production_stopped = true
+energy_released = true
+energy_reserved = true
+
+# Fuel
+fuel_burning_started = true
+fuel_burning_stopped = true
+fuel_burning_updated = true
+fuel_config = true
+fuel_deleted = true
+fuel_deposited = true
+fuel_efficiency_removed = true
+fuel_efficiency_set = true
+fuel_withdrawn = true
+
+# Inventories
+inventories = true
+item_burned = true
+item_deposited = true
+item_destroyed = true
+items = true
+item_minted = true
+item_withdrawn = true
+
+# Locations
+location_revealed = true
+
+# Status
+status_changed = true

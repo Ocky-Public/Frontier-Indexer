@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.gates;
+DROP TABLE IF EXISTS gates;

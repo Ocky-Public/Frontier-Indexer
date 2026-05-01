@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -7,7 +7,7 @@ use sui_sdk_types::Address;
 use sui_types::object::Object;
 
 use crate::models::world::MoveLocation;
-use crate::schema::indexer::items;
+use crate::schema::items;
 
 #[derive(Deserialize)]
 pub struct MoveItem {
@@ -21,7 +21,7 @@ pub struct MoveItem {
     pub location: MoveLocation,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = items)]
 pub struct StoredItem {
     pub id: String,

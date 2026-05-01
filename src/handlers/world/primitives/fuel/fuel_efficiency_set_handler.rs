@@ -10,18 +10,29 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredFuelEfficiencySet;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct FuelEfficiencySetHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StoredFuelEfficiencySet>>,
 }
 
 impl FuelEfficiencySetHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(
+        ctx: &AppContext,
+        transports: Vec<Arc<dyn Transport<StoredFuelEfficiencySet>>>,
+    ) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_fuel_efficiency_set(&self, event: &Event) -> bool {
@@ -75,7 +86,7 @@ impl Handler for FuelEfficiencySetHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_fuel_efficiency_set::dsl::*;
+        use crate::schema::events_fuel_efficiency_set::dsl::*;
 
         diesel::insert_into(events_fuel_efficiency_set)
             .values(batch)
@@ -85,5 +96,9 @@ impl Handler for FuelEfficiencySetHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
-
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -20,18 +20,26 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::world::StoredExtensionFreeze;
 use crate::models::world::StoredStorageUnit;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct StorageUnitHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StorageUnitAction>>,
 }
 
 impl StorageUnitHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<StorageUnitAction>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_storage_unit(&self, obj: &Object) -> bool {
@@ -84,7 +92,7 @@ impl StorageUnitHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum StorageUnitAction {
     Upsert(StoredStorageUnit),
     Freeze(StoredExtensionFreeze),
@@ -157,10 +165,59 @@ impl Processor for StorageUnitHandler {
 #[async_trait]
 impl Handler for StorageUnitHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                StorageUnitAction::Upsert(storage_unit) => {
+                    let current = batch.entry(storage_unit.id.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), StorageUnitAction::Delete(_)) {
+                                continue;
+                            }
+
+                            let StorageUnitAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if storage_unit.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                StorageUnitAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), StorageUnitAction::Upsert(_)) {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                StorageUnitAction::Freeze(freeze) => {
+                    let current = batch.entry(freeze.id.clone());
+
+                    match current {
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -168,43 +225,23 @@ impl Handler for StorageUnitHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        let mut to_upsert: HashMap<String, &StoredStorageUnit> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
-        let mut to_freeze = Vec::new();
+        let mut to_upsert: Vec<&StoredStorageUnit> = vec![];
+        let mut to_delete: Vec<String> = vec![];
+        let mut to_freeze: Vec<&StoredExtensionFreeze> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
-                StorageUnitAction::Upsert(storage_unit) => {
-                    let entry = to_upsert.entry(storage_unit.id.clone());
-
-                    match entry {
-                        Entry::Occupied(mut entry) => {
-                            if storage_unit.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(storage_unit);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(storage_unit);
-                        }
-                    }
-                }
-                StorageUnitAction::Delete(id_str) => {
-                    to_delete.insert(id_str.clone());
-                }
+                StorageUnitAction::Upsert(storage_unit) => to_upsert.push(storage_unit),
+                StorageUnitAction::Delete(id_str) => to_delete.push(id_str.clone()),
                 StorageUnitAction::Freeze(freeze) => to_freeze.push(freeze),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredStorageUnit> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
-            use crate::schema::indexer::storage_units::dsl::*;
+        if !to_upsert.is_empty() {
+            use crate::schema::storage_units::dsl::*;
 
             diesel::insert_into(storage_units)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict(id)
                 .do_update()
                 .set((
@@ -229,7 +266,7 @@ impl Handler for StorageUnitHandler {
         }
 
         if !to_freeze.is_empty() {
-            use crate::schema::indexer::extension_freezes::dsl::*;
+            use crate::schema::extension_freezes::dsl::*;
 
             diesel::insert_into(extension_freezes)
                 .values(to_freeze)
@@ -240,7 +277,7 @@ impl Handler for StorageUnitHandler {
         }
 
         if !to_delete.is_empty() {
-            use crate::schema::indexer::{extension_freezes, storage_units};
+            use crate::schema::{extension_freezes, storage_units};
 
             diesel::delete(storage_units::dsl::storage_units)
                 .filter(storage_units::dsl::id.eq_any(to_delete.clone()))
@@ -248,11 +285,15 @@ impl Handler for StorageUnitHandler {
                 .await?;
 
             diesel::delete(extension_freezes::dsl::extension_freezes)
-                .filter(extension_freezes::dsl::id.eq_any(to_delete))
+                .filter(extension_freezes::dsl::owner_id.eq_any(to_delete))
                 .execute(conn)
                 .await?;
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

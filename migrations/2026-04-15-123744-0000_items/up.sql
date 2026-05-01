@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.items(
+CREATE TABLE IF NOT EXISTS items(
   id          VARCHAR(66)   PRIMARY KEY,
   parent_id   VARCHAR(66)   NOT NULL,
   location    VARCHAR(66)   NOT NULL,

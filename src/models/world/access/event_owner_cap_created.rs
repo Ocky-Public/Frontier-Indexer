@@ -1,13 +1,13 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::schema::indexer::events_owner_cap_created;
+use crate::schema::events_owner_cap_created;
 
 #[derive(Deserialize)]
 pub struct MoveOwnerCapCreated {
@@ -15,7 +15,7 @@ pub struct MoveOwnerCapCreated {
     pub authorized_object_id: Address,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_owner_cap_created)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredOwnerCapCreated {

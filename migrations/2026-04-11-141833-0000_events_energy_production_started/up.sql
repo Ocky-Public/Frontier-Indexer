@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.events_energy_production_started (
+CREATE TABLE IF NOT EXISTS events_energy_production_started (
   event_id                  VARCHAR(100)  NOT NULL,
   occurred_at               TIMESTAMPTZ   NOT NULL,
   id                        VARCHAR(66)   NOT NULL,
@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS indexer.events_energy_production_started (
   PRIMARY KEY (event_id, occurred_at)
 );
 
-SELECT public.create_hypertable('indexer.events_energy_production_started', 'occurred_at');
+SELECT public.create_hypertable('events_energy_production_started', 'occurred_at');

@@ -2,7 +2,7 @@ use clap::Parser;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use indexer::AppEnv;
+use crate::AppEnv;
 
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum Package {
@@ -128,7 +128,7 @@ pub struct SandboxArgs {
     #[arg(
         long,
         env = "SANDBOX",
-        requires = "app_package_id",
+        requires = "app_package_ids",
         default_value_t = false
     )]
     pub enabled: bool,
@@ -144,6 +144,57 @@ pub struct SandboxArgs {
 
     #[clap(long, env = "SANDBOX_INGESTION_PATH")]
     pub local_ingestion_path: Option<PathBuf>,
+}
+
+#[derive(Parser)]
+pub struct AmqpConfig {
+    #[arg(long, env = "AMQP_URL")]
+    pub url: Option<String>,
+
+    #[arg(long, env = "AMQP_EXCHANGE", default_value = "indexer")]
+    pub exchange: String,
+
+    #[arg(long, env = "AMQP_POOL_SIZE", default_value_t = 10)]
+    pub pool_size: usize,
+}
+
+#[derive(Parser)]
+pub struct NatsConfig {
+    #[arg(long, env = "NATS_URL")]
+    pub url: Option<String>,
+
+    #[arg(long, env = "NATS_SUBJECT_PREFIX", default_value = "indexer")]
+    pub subject_prefix: String,
+}
+
+#[derive(Parser)]
+pub struct RedisConfig {
+    #[arg(long, env ="REDIS_URL")]
+    pub url: Option<String>,
+
+    #[arg(long, env = "REDIS_CHANNEL_PREFIX", default_value = "indexer")]
+    pub channel_prefix: String,
+}
+
+#[derive(Parser)]
+pub struct SocketIoConfig {
+    #[arg(long, env = "SOCKET_IO_URL")]
+    pub url: Option<SocketAddr>,
+}
+
+#[derive(Parser)]
+pub struct TransportConfig {
+    #[command(flatten)]
+    pub amqp: AmqpConfig,
+
+    #[command(flatten)]
+    pub nats: NatsConfig,
+
+    #[command(flatten)]
+    pub redis: RedisConfig,
+
+    #[command(flatten)]
+    pub socketio: SocketIoConfig,
 }
 
 #[derive(Parser)]
@@ -168,6 +219,9 @@ pub struct AppConfig {
 
     #[arg(long, env = "METRICS_ADDRESS", default_value = "0.0.0.0:9184")]
     pub metrics_address: SocketAddr,
+
+    #[command(flatten)]
+    pub transport_config: TransportConfig,
 
     #[command(flatten)]
     pub sandbox: SandboxArgs,

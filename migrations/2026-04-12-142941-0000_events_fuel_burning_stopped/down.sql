@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_fuel_burning_stopped;
+DROP TABLE IF EXISTS events_fuel_burning_stopped;

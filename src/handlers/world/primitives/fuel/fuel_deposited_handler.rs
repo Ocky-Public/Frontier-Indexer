@@ -10,20 +10,28 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::MoveFuelAction;
 use crate::models::world::MoveFuelEvent;
 use crate::models::world::StoredFuelDeposited;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct FuelDepositedHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StoredFuelDeposited>>,
 }
 
 impl FuelDepositedHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<StoredFuelDeposited>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_fuel_deposited(&self, event: &Event) -> bool {
@@ -86,7 +94,7 @@ impl Handler for FuelDepositedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_fuel_deposited::dsl::*;
+        use crate::schema::events_fuel_deposited::dsl::*;
 
         diesel::insert_into(events_fuel_deposited)
             .values(batch)
@@ -96,5 +104,9 @@ impl Handler for FuelDepositedHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

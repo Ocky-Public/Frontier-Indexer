@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.energy_config (
+CREATE TABLE IF NOT EXISTS energy_config (
   table_id            VARCHAR(66) NOT NULL,
   type_id             BIGINT      NOT NULL,
   energy_cost         BIGINT      NOT NULL,

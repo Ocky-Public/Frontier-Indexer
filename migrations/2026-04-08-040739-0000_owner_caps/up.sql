@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.owner_caps (
+CREATE TABLE IF NOT EXISTS owner_caps (
   id                  VARCHAR(66) PRIMARY KEY,
   object_id           VARCHAR(66) NOT NULL,
   owner_address       VARCHAR(66) NOT NULL,

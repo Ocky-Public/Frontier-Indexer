@@ -1,6 +1,7 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -18,17 +19,25 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::world::StoredOwnerCap;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct OwnerCapHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<OwnerCapAction>>,
 }
 
 impl OwnerCapHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<OwnerCapAction>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_owner_cap(&self, obj: &Object) -> bool {
@@ -38,7 +47,7 @@ impl OwnerCapHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum OwnerCapAction {
     Upsert(StoredOwnerCap),
     Delete(String),
@@ -59,7 +68,7 @@ impl Processor for OwnerCapHandler {
             }
 
             for change in &tx.effects.object_changes() {
-                let object_id = change.id;
+                let id = change.id;
 
                 match change.id_operation {
                     IDOperation::Created | IDOperation::None => {
@@ -67,7 +76,7 @@ impl Processor for OwnerCapHandler {
                             continue;
                         };
 
-                        let key = ObjectKey(object_id, version);
+                        let key = ObjectKey(id, version);
 
                         let Some(obj) = checkpoint.object_set.get(&key) else {
                             continue;
@@ -79,7 +88,7 @@ impl Processor for OwnerCapHandler {
                         }
                     }
                     IDOperation::Deleted => {
-                        results.push(OwnerCapAction::Delete(object_id.to_string()));
+                        results.push(OwnerCapAction::Delete(id.to_string()));
                     }
                 }
             }
@@ -92,10 +101,49 @@ impl Processor for OwnerCapHandler {
 #[async_trait]
 impl Handler for OwnerCapHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                OwnerCapAction::Upsert(owner_cap) => {
+                    let current = batch.entry(owner_cap.id.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), OwnerCapAction::Delete(_)) {
+                                continue;
+                            }
+
+                            let OwnerCapAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if owner_cap.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                OwnerCapAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), OwnerCapAction::Upsert(_)) {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -103,41 +151,21 @@ impl Handler for OwnerCapHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::owner_caps::dsl::*;
+        use crate::schema::owner_caps::dsl::*;
 
-        let mut to_upsert: HashMap<String, &StoredOwnerCap> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
+        let mut to_upsert: Vec<&StoredOwnerCap> = vec![];
+        let mut to_delete: Vec<String> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
-                OwnerCapAction::Upsert(owner_cap) => {
-                    let entry = to_upsert.entry(owner_cap.id.clone());
-
-                    match entry {
-                        Entry::Occupied(mut entry) => {
-                            if owner_cap.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(owner_cap);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(owner_cap);
-                        }
-                    }
-                }
-                OwnerCapAction::Delete(id_str) => {
-                    to_delete.insert(id_str.clone());
-                }
+                OwnerCapAction::Upsert(owner_cap) => to_upsert.push(owner_cap),
+                OwnerCapAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredOwnerCap> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             diesel::insert_into(owner_caps)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict(id)
                 .do_update()
                 .set((
@@ -162,5 +190,9 @@ impl Handler for OwnerCapHandler {
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

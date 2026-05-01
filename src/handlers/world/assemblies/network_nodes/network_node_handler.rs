@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
-
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -19,17 +19,25 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::world::StoredNetworkNode;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct NetworkNodeHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<NetworkNodeAction>>,
 }
 
 impl NetworkNodeHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<NetworkNodeAction>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_network_node(&self, obj: &Object) -> bool {
@@ -39,7 +47,7 @@ impl NetworkNodeHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum NetworkNodeAction {
     Upsert(StoredNetworkNode),
     Delete(String),
@@ -94,10 +102,49 @@ impl Processor for NetworkNodeHandler {
 #[async_trait]
 impl Handler for NetworkNodeHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                NetworkNodeAction::Upsert(network_node) => {
+                    let current = batch.entry(network_node.id.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), NetworkNodeAction::Delete(_)) {
+                                continue;
+                            }
+
+                            let NetworkNodeAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if network_node.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                NetworkNodeAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), NetworkNodeAction::Upsert(_)) {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -105,41 +152,21 @@ impl Handler for NetworkNodeHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::network_nodes::dsl::*;
+        use crate::schema::network_nodes::dsl::*;
 
-        let mut to_upsert: HashMap<String, &StoredNetworkNode> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
+        let mut to_upsert: Vec<&StoredNetworkNode> = vec![];
+        let mut to_delete: Vec<String> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
-                NetworkNodeAction::Upsert(network_node) => {
-                    let entry = to_upsert.entry(network_node.id.clone());
-
-                    match entry {
-                        Entry::Occupied(mut entry) => {
-                            if network_node.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(network_node);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(network_node);
-                        }
-                    }
-                }
-                NetworkNodeAction::Delete(id_str) => {
-                     to_delete.insert(id_str.clone());
-                }
+                NetworkNodeAction::Upsert(network_node) => to_upsert.push(network_node),
+                NetworkNodeAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredNetworkNode> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             diesel::insert_into(network_nodes)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict(id)
                 .do_update()
                 .set((
@@ -181,5 +208,9 @@ impl Handler for NetworkNodeHandler {
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
@@ -9,7 +9,7 @@ use sui_types::event::Event;
 use crate::handlers::EventMeta;
 use crate::models::world::MoveTenantItemId;
 use crate::models::MoveTypeName;
-use crate::schema::indexer::events_turret_extension_authorized;
+use crate::schema::events_turret_extension_authorized;
 
 #[derive(Deserialize)]
 pub struct MoveTurretExtensionAuthorized {
@@ -20,7 +20,7 @@ pub struct MoveTurretExtensionAuthorized {
     pub owner_cap_id: Address,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_turret_extension_authorized)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredTurretExtensionAuthorized {

@@ -1,13 +1,14 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use serde::Serialize;
 
 use sui_indexer_alt_framework::FieldCount;
 
 use crate::handlers::EventMeta;
 use crate::models::world::MoveFuelEvent;
-use crate::schema::indexer::events_fuel_burning_stopped;
+use crate::schema::events_fuel_burning_stopped;
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_fuel_burning_stopped)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredFuelBurningStopped {

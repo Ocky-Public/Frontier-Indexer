@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 
@@ -9,7 +9,7 @@ use sui_types::collection_types::Table;
 use sui_types::dynamic_field::Field;
 use sui_types::object::Object;
 
-use crate::schema::indexer::fuel_config;
+use crate::schema::fuel_config;
 
 #[derive(Deserialize)]
 pub struct MoveFuelConfig {
@@ -17,7 +17,7 @@ pub struct MoveFuelConfig {
     pub fuel_efficiency: Table,
 }
 
-#[derive(Deserialize, Insertable, Queryable, Selectable, Debug, Clone, FieldCount)]
+#[derive(Deserialize, Serialize, Insertable, Queryable, Selectable, Debug, Clone, FieldCount)]
 #[diesel(table_name = fuel_config)]
 pub struct StoredFuelConfig {
     pub table_id: String,

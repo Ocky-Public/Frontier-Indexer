@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
@@ -9,7 +9,7 @@ use crate::models::world::MoveAssemblyStatus;
 use crate::models::world::MoveLocation;
 use crate::models::world::MoveMetadata;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::assemblies;
+use crate::schema::assemblies;
 
 #[derive(Deserialize)]
 pub struct MoveAssembly {
@@ -23,7 +23,7 @@ pub struct MoveAssembly {
     pub metadata: Option<MoveMetadata>,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = assemblies)]
 pub struct StoredAssembly {
     pub id: String,

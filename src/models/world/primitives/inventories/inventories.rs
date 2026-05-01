@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use sui_indexer_alt_framework::FieldCount;
@@ -10,7 +10,7 @@ use sui_types::object::Object;
 
 use crate::models::world::MoveItemEntry;
 use crate::models::world::StoredInventoryEntry;
-use crate::schema::indexer::inventories;
+use crate::schema::inventories;
 
 #[derive(Deserialize)]
 pub struct MoveInventory {
@@ -19,7 +19,7 @@ pub struct MoveInventory {
     pub items: VecMap<u64, MoveItemEntry>,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = inventories)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredInventory {

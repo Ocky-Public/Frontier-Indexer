@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
-
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use diesel::prelude::*;
@@ -19,17 +19,25 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::models::world::StoredAssembly;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct AssemblyHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<AssemblyAction>>,
 }
 
 impl AssemblyHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<AssemblyAction>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_assembly(&self, obj: &Object) -> bool {
@@ -39,7 +47,7 @@ impl AssemblyHandler {
     }
 }
 
-#[derive(FieldCount)]
+#[derive(Serialize, Clone, FieldCount)]
 pub enum AssemblyAction {
     Upsert(StoredAssembly),
     Delete(String),
@@ -93,10 +101,49 @@ impl Processor for AssemblyHandler {
 #[async_trait]
 impl Handler for AssemblyHandler {
     type Store = Db;
-    type Batch = Vec<Self::Value>;
+    type Batch = HashMap<String, Self::Value>;
 
     fn batch(&self, batch: &mut Self::Batch, values: std::vec::IntoIter<Self::Value>) {
-        batch.extend(values);
+        for value in values {
+            match value.clone() {
+                AssemblyAction::Upsert(assembly) => {
+                    let current = batch.entry(assembly.id.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), AssemblyAction::Delete(_)) {
+                                continue;
+                            }
+
+                            let AssemblyAction::Upsert(current) = entry.get() else {
+                                continue;
+                            };
+
+                            if assembly.checkpoint_updated > current.checkpoint_updated {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+                AssemblyAction::Delete(id_str) => {
+                    let current = batch.entry(id_str.clone());
+
+                    match current {
+                        Entry::Occupied(mut entry) => {
+                            if matches!(entry.get(), AssemblyAction::Upsert(_)) {
+                                entry.insert(value);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(value);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     async fn commit<'a>(
@@ -104,41 +151,21 @@ impl Handler for AssemblyHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::assemblies::dsl::*;
+        use crate::schema::assemblies::dsl::*;
 
-        let mut to_upsert: HashMap<String, &StoredAssembly> = HashMap::new();
-        let mut to_delete: HashSet<String> = HashSet::new();
+        let mut to_upsert: Vec<&StoredAssembly> = vec![];
+        let mut to_delete: Vec<String> = vec![];
 
-        for action in batch {
+        for action in batch.values() {
             match action {
-                AssemblyAction::Upsert(assembly) => {
-                    let entry = to_upsert.entry(assembly.id.clone());
-
-                    match entry {
-                        Entry::Occupied(mut entry) => {
-                            if assembly.checkpoint_updated > entry.get().checkpoint_updated {
-                                entry.insert(assembly);
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(assembly);
-                        }
-                    }
-                }
-                AssemblyAction::Delete(id_str) => {
-                    to_delete.insert(id_str.clone());
-                }
+                AssemblyAction::Upsert(assembly) => to_upsert.push(assembly),
+                AssemblyAction::Delete(id_str) => to_delete.push(id_str.clone()),
             }
         }
 
-        // Remove any updates for which deletions exist.
-        to_upsert.retain(|obj_id, _| !to_delete.contains(obj_id));
-
-        let final_values: Vec<&StoredAssembly> = to_upsert.into_values().collect();
-
-        if !final_values.is_empty() {
+        if !to_upsert.is_empty() {
             diesel::insert_into(assemblies)
-                .values(final_values)
+                .values(to_upsert)
                 .on_conflict(id)
                 .do_update()
                 .set((
@@ -167,5 +194,9 @@ impl Handler for AssemblyHandler {
         }
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }

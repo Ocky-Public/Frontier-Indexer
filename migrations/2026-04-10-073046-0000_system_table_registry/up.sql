@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.system_table_registry (
+CREATE TABLE IF NOT EXISTS system_table_registry (
   table_id            VARCHAR(66) PRIMARY KEY,
   parent_id           VARCHAR(66) NOT NULL,
   package_id          VARCHAR(66) NOT NULL,

@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
@@ -10,7 +10,7 @@ use crate::handlers::EventMeta;
 use crate::models::world::MoveAction;
 use crate::models::world::MoveStatus;
 use crate::models::world::MoveTenantItemId;
-use crate::schema::indexer::events_status_changed;
+use crate::schema::events_status_changed;
 
 #[derive(Deserialize)]
 pub struct MoveStatusChanged {
@@ -20,7 +20,7 @@ pub struct MoveStatusChanged {
     pub action: MoveAction,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_status_changed)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredStatusChanged {

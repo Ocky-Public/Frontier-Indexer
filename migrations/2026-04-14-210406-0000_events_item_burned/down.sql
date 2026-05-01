@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.events_item_burned;
+DROP TABLE IF EXISTS events_item_burned;

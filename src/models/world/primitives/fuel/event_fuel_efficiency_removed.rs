@@ -1,19 +1,19 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::schema::indexer::events_fuel_efficiency_removed;
+use crate::schema::events_fuel_efficiency_removed;
 
 #[derive(Deserialize)]
 pub struct MoveFuelEfficiencyRemoved {
     pub fuel_type_id: u64,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_fuel_efficiency_removed)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredFuelEfficiencyRemoved {

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.storage_units (
+CREATE TABLE IF NOT EXISTS storage_units (
   id                  VARCHAR(66)   PRIMARY KEY,
   item_id             VARCHAR(20)   NOT NULL,
   tenant              TEXT          NOT NULL,

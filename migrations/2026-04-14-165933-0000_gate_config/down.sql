@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.gate_config;
+DROP TABLE IF EXISTS gate_config;

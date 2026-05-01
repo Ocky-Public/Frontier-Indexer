@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS indexer.events_gate_extension_authorized (
+CREATE TABLE IF NOT EXISTS events_gate_extension_authorized (
   event_id          VARCHAR(100)  NOT NULL,
   occurred_at       TIMESTAMPTZ   NOT NULL,
   id                VARCHAR(66)   NOT NULL,
@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS indexer.events_gate_extension_authorized (
   PRIMARY KEY (event_id, occurred_at)
 );
 
-SELECT public.create_hypertable('indexer.events_gate_extension_authorized', 'occurred_at');
+SELECT public.create_hypertable('events_gate_extension_authorized', 'occurred_at');

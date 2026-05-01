@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS indexer.assemblies;
+DROP TABLE IF EXISTS assemblies;

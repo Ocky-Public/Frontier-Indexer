@@ -1,1 +1,1 @@
-DELETE TABLE IF EXISTS indexer.energy_config;
+DELETE TABLE IF EXISTS energy_config;

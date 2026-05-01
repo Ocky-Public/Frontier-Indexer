@@ -1,20 +1,20 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use sui_indexer_alt_framework::FieldCount;
 use sui_sdk_types::Address;
 use sui_types::event::Event;
 
 use crate::handlers::EventMeta;
-use crate::schema::indexer::events_extension_frozen;
+use crate::schema::events_extension_frozen;
 
 #[derive(Deserialize)]
 pub struct MoveExtensionFrozen {
     pub assembly_id: Address,
 }
 
-#[derive(Insertable, Debug, Clone, FieldCount)]
+#[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_extension_frozen)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StoredExtensionFrozen {

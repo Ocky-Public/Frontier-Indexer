@@ -10,18 +10,26 @@ use sui_indexer_alt_framework::pipeline::Processor;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
+use crate::handlers::Emitter;
 use crate::handlers::EventMeta;
 use crate::models::world::StoredGateUnlinked;
+use crate::transports::Transport;
 
 use crate::AppContext;
 
 pub struct GateUnlinkedHandler {
     ctx: AppContext,
+    emitter: Arc<Emitter<StoredGateUnlinked>>,
 }
 
 impl GateUnlinkedHandler {
-    pub fn new(ctx: &AppContext) -> Self {
-        Self { ctx: ctx.clone() }
+    pub fn new(ctx: &AppContext, transports: Vec<Arc<dyn Transport<StoredGateUnlinked>>>) -> Self {
+        let emitter = Emitter::new(transports);
+
+        Self {
+            ctx: ctx.clone(),
+            emitter: Arc::new(emitter),
+        }
     }
 
     fn is_gate_unlinked(&self, event: &Event) -> bool {
@@ -75,7 +83,7 @@ impl Handler for GateUnlinkedHandler {
         batch: &Self::Batch,
         conn: &mut Connection<'a>,
     ) -> anyhow::Result<usize> {
-        use crate::schema::indexer::events_gate_unlinked::dsl::*;
+        use crate::schema::events_gate_unlinked::dsl::*;
 
         diesel::insert_into(events_gate_unlinked)
             .values(batch)
@@ -85,5 +93,9 @@ impl Handler for GateUnlinkedHandler {
             .await?;
 
         Ok(batch.len())
+    }
+
+    async fn post_commit(&self, batch: &Self::Batch) {
+        self.emitter.dispatch(Self::NAME, batch);
     }
 }
