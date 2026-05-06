@@ -31,81 +31,676 @@ impl SocketIoTransport {
 }
 
 // Owner Caps
-impl Routing<StoredOwnerCapCreated> for SocketIoTransport {}
-impl Routing<OwnerCapAction> for SocketIoTransport {}
-impl Routing<StoredOwnerCapTransferred> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredOwnerCapCreated> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredOwnerCapCreated,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<OwnerCapAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &OwnerCapAction) -> anyhow::Result<()> {
+        match action {
+            OwnerCapAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            OwnerCapAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredOwnerCapTransferred> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredOwnerCapTransferred,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
 
 // Assemblies
-impl Routing<StoredAssemblyCreated> for SocketIoTransport {}
-impl Routing<AssemblyAction> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredAssemblyCreated> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredAssemblyCreated,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<AssemblyAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &AssemblyAction) -> anyhow::Result<()> {
+        match action {
+            AssemblyAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            AssemblyAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
 
 // Extensions
-impl Routing<StoredExtensionFrozen> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredExtensionFrozen> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredExtensionFrozen,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
 
 // Gates
-impl Routing<GateConfigAction> for SocketIoTransport {}
-impl Routing<StoredGateCreated> for SocketIoTransport {}
-impl Routing<StoredGateExtensionAuthorized> for SocketIoTransport {}
-impl Routing<StoredGateExtensionRevoked> for SocketIoTransport {}
-impl Routing<GateAction> for SocketIoTransport {}
-impl Routing<StoredGateJumped> for SocketIoTransport {}
-impl Routing<StoredGateLinked> for SocketIoTransport {}
-impl Routing<GatePermitAction> for SocketIoTransport {}
-impl Routing<StoredGatePermitIssued> for SocketIoTransport {}
-impl Routing<StoredGateUnlinked> for SocketIoTransport {}
+#[async_trait]
+impl Routing<GateConfigAction> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, action: &GateConfigAction) -> anyhow::Result<()> {
+        match action {
+            GateConfigAction::Register(_table) => Ok(()),
+            GateConfigAction::Upsert(item) => {
+                let event = "updated".to_string();
+                self.send(pipeline.to_string(), event, item).await
+            }
+            GateConfigAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(pipeline.to_string(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredGateCreated> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredGateCreated) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredGateExtensionAuthorized> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredGateExtensionAuthorized,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredGateExtensionRevoked> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredGateExtensionRevoked,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<GateAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &GateAction) -> anyhow::Result<()> {
+        match action {
+            GateAction::Freeze(item) => {
+                let room = item.id.clone();
+                let event = "extension_frozen".to_string();
+                self.send(room, event, item).await
+            }
+            GateAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            GateAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredGateJumped> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredGateJumped) -> anyhow::Result<()> {
+        let room = item.departure_id.clone();
+        _ = self.send(room, pipeline.to_string(), item).await;
+
+        let room = item.destination_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredGateLinked> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredGateLinked) -> anyhow::Result<()> {
+        let room = item.departure_id.clone();
+        _ = self.send(room, pipeline.to_string(), item).await;
+
+        let room = item.destination_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<GatePermitAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &GatePermitAction) -> anyhow::Result<()> {
+        match action {
+            GatePermitAction::Upsert(item) => {
+                let room = item.character_id.clone();
+                let event = "gate_permit_updated".to_string();
+                self.send(room, event, item).await
+            }
+            GatePermitAction::Delete(id_str) => {
+                let event = "gate_permit_deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredGatePermitIssued> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredGatePermitIssued,
+    ) -> anyhow::Result<()> {
+        let room = item.departure_id.clone();
+        _ = self.send(room, pipeline.to_string(), item).await;
+
+        let room = item.destination_id.clone();
+        _ = self.send(room, pipeline.to_string(), item).await;
+
+        let room = item.character_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredGateUnlinked> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredGateUnlinked) -> anyhow::Result<()> {
+        let room = item.departure_id.clone();
+        _ = self.send(room, pipeline.to_string(), item).await;
+
+        let room = item.destination_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
 
 // Network Nodes
-impl Routing<StoredNetworkNodeCreated> for SocketIoTransport {}
-impl Routing<NetworkNodeAction> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredNetworkNodeCreated> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredNetworkNodeCreated,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<NetworkNodeAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &NetworkNodeAction) -> anyhow::Result<()> {
+        match action {
+            NetworkNodeAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            NetworkNodeAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
 
 // Storage Units
-impl Routing<StoredStorageUnitCreated> for SocketIoTransport {}
-impl Routing<StoredStorageUnitExtensionAuthorized> for SocketIoTransport {}
-impl Routing<StoredStorageUnitExtensionRevoked> for SocketIoTransport {}
-impl Routing<StorageUnitAction> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredStorageUnitCreated> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredStorageUnitCreated,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredStorageUnitExtensionAuthorized> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredStorageUnitExtensionAuthorized,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredStorageUnitExtensionRevoked> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredStorageUnitExtensionRevoked,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StorageUnitAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &StorageUnitAction) -> anyhow::Result<()> {
+        match action {
+            StorageUnitAction::Freeze(item) => {
+                let room = item.id.clone();
+                let event = "extension_frozen".to_string();
+                self.send(room, event, item).await
+            }
+            StorageUnitAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            StorageUnitAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
 
 // Turrets
-impl Routing<StoredTurretCreated> for SocketIoTransport {}
-impl Routing<StoredTurretExtensionAuthorized> for SocketIoTransport {}
-impl Routing<StoredTurretExtensionRevoked> for SocketIoTransport {}
-impl Routing<TurretAction> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredTurretCreated> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredTurretCreated) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredTurretExtensionAuthorized> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredTurretExtensionAuthorized,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredTurretExtensionRevoked> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredTurretExtensionRevoked,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<TurretAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &TurretAction) -> anyhow::Result<()> {
+        match action {
+            TurretAction::Freeze(item) => {
+                let room = item.id.clone();
+                let event = "extension_frozen".to_string();
+                self.send(room, event, item).await
+            }
+            TurretAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            TurretAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
 
 // Characters
-impl Routing<StoredCharacterCreated> for SocketIoTransport {}
-impl Routing<CharacterAction> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredCharacterCreated> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredCharacterCreated,
+    ) -> anyhow::Result<()> {
+        let room = item.owner_address.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<CharacterAction> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, action: &CharacterAction) -> anyhow::Result<()> {
+        match action {
+            CharacterAction::Upsert(item) => {
+                let room = item.id.clone();
+                self.send(room, pipeline.to_string(), item).await
+            }
+            CharacterAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
 
 // Killmails
-impl Routing<StoredKillmail> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredKillmail> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredKillmail) -> anyhow::Result<()> {
+        self.send(pipeline.to_string(), item.id.clone(), item).await
+    }
+}
 
 // Energy
-impl Routing<EnergyConfigAction> for SocketIoTransport {}
-impl Routing<StoredEnergyProductionStarted> for SocketIoTransport {}
-impl Routing<StoredEnergyProductionStopped> for SocketIoTransport {}
-impl Routing<StoredEnergyReleased> for SocketIoTransport {}
-impl Routing<StoredEnergyReserved> for SocketIoTransport {}
+#[async_trait]
+impl Routing<EnergyConfigAction> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        action: &EnergyConfigAction,
+    ) -> anyhow::Result<()> {
+        match action {
+            EnergyConfigAction::Register(_table) => Ok(()),
+            EnergyConfigAction::Upsert(item) => {
+                let event = "updated".to_string();
+                self.send(pipeline.to_string(), event, item).await
+            }
+            EnergyConfigAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(pipeline.to_string(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredEnergyProductionStarted> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredEnergyProductionStarted,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredEnergyProductionStopped> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredEnergyProductionStopped,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredEnergyReleased> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredEnergyReleased,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredEnergyReserved> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredEnergyReserved,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
 
 // Fuel
-impl Routing<StoredFuelBurningStarted> for SocketIoTransport {}
-impl Routing<StoredFuelBurningStopped> for SocketIoTransport {}
-impl Routing<StoredFuelBurningUpdated> for SocketIoTransport {}
-impl Routing<FuelConfigAction> for SocketIoTransport {}
-impl Routing<StoredFuelDeleted> for SocketIoTransport {}
-impl Routing<StoredFuelDeposited> for SocketIoTransport {}
-impl Routing<StoredFuelEfficiencyRemoved> for SocketIoTransport {}
-impl Routing<StoredFuelEfficiencySet> for SocketIoTransport {}
-impl Routing<StoredFuelWithdrawn> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredFuelBurningStarted> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredFuelBurningStarted,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredFuelBurningStopped> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredFuelBurningStopped,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredFuelBurningUpdated> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredFuelBurningUpdated,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<FuelConfigAction> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, action: &FuelConfigAction) -> anyhow::Result<()> {
+        match action {
+            FuelConfigAction::Register(_table) => Ok(()),
+            FuelConfigAction::Upsert(item) => {
+                let event = "updated".to_string();
+                self.send(pipeline.to_string(), event, item).await
+            }
+            FuelConfigAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(pipeline.to_string(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredFuelDeleted> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredFuelDeleted) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredFuelDeposited> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredFuelDeposited) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredFuelEfficiencyRemoved> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredFuelEfficiencyRemoved,
+    ) -> anyhow::Result<()> {
+        let room = item.type_id.to_string();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredFuelEfficiencySet> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredFuelEfficiencySet,
+    ) -> anyhow::Result<()> {
+        let room = item.type_id.to_string();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredFuelWithdrawn> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredFuelWithdrawn) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
 
 // Inventories
-impl Routing<InventoryAction> for SocketIoTransport {}
-impl Routing<StoredItemBurned> for SocketIoTransport {}
-impl Routing<StoredItemDeposited> for SocketIoTransport {}
-impl Routing<StoredItemDestroyed> for SocketIoTransport {}
-impl Routing<ItemAction> for SocketIoTransport {}
-impl Routing<StoredItemMinted> for SocketIoTransport {}
-impl Routing<StoredItemWithdrawn> for SocketIoTransport {}
+#[async_trait]
+impl Routing<InventoryAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &InventoryAction) -> anyhow::Result<()> {
+        match action {
+            InventoryAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            InventoryAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredItemBurned> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredItemBurned) -> anyhow::Result<()> {
+        let room = item.assembly_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredItemDeposited> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredItemDeposited) -> anyhow::Result<()> {
+        let room = item.assembly_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredItemDestroyed> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredItemDestroyed) -> anyhow::Result<()> {
+        let room = item.assembly_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<ItemAction> for SocketIoTransport {
+    async fn send(&self, _pipeline: &'static str, action: &ItemAction) -> anyhow::Result<()> {
+        match action {
+            ItemAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = "updated".to_string();
+                self.send(room, event, item).await
+            }
+            ItemAction::Delete(id_str) => {
+                let event = "deleted".to_string();
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredItemMinted> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredItemMinted) -> anyhow::Result<()> {
+        let room = item.assembly_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredItemWithdrawn> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredItemWithdrawn) -> anyhow::Result<()> {
+        let room = item.assembly_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
 
 // Locations
-impl Routing<StoredLocationRevealed> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredLocationRevealed> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredLocationRevealed,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
 
 // Status
-impl Routing<StoredStatusChanged> for SocketIoTransport {}
+#[async_trait]
+impl Routing<StoredStatusChanged> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredStatusChanged) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
