@@ -250,7 +250,7 @@ pub struct SandboxArgs {
         id = "sandbox_enabled",
         long = "sandbox_enabled",
         env = "SANDBOX_ENABLED",
-        requires = "app_package_ids",
+        requires = "sandbox_app_packages",
         default_value_t = false
     )]
     pub enabled: bool,
