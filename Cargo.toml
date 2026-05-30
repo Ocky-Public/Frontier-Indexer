@@ -23,6 +23,11 @@ clap = { version = "4.4", features = ["derive", "wrap_help"] }
 prometheus = { version = "0.14", features = ["protobuf"] }
 strum = { version = "0.27.1", features = ["derive"] }
 toml = { version = "0.8", features = ["parse"] }
+reqwest = { version = "0.12", default-features = false, features = [
+  "http2",
+  "json",
+  "rustls-tls",
+] }
 axum = { version = "0.8", default-features = false, features = [
   "macros",
   "tokio",

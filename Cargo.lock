@@ -4289,6 +4289,7 @@ dependencies = [
  "move-core-types",
  "prometheus",
  "redis",
+ "reqwest",
  "serde",
  "serde_json",
  "socketioxide",
