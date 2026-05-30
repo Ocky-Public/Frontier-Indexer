@@ -1,6 +1,9 @@
 use clap::Parser;
+use reqwest::header::HeaderName;
+use reqwest::header::HeaderValue;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use url::Url;
 
 use crate::AppEnv;
 
@@ -129,14 +132,6 @@ pub struct IndexerConfig {
 
 #[derive(Parser)]
 pub struct Sequential {
-    #[arg(
-        id = "checkpoint_lag",
-        long = "checkpoint_lag",
-        env = "CHECKPOINT_LAG",
-        default_value_t = 0
-    )]
-    pub checkpoint_lag: u64,
-
     #[arg(id = "min_eager_rows", long = "min_eager_rows", env = "MIN_EAGER_ROWS")]
     pub min_eager_rows: Option<usize>,
 
@@ -190,12 +185,12 @@ pub struct Sequential {
 #[derive(Parser)]
 pub struct Ingestion {
     #[arg(
-        id = "checkpoint_buffer_size",
-        long = "checkpoint_buffer_size",
-        env = "CHECKPOINT_BUFFER_SIZE",
-        default_value_t = 50
+        id = "ingest_concurrency_max",
+        long = "ingest_concurrency_max",
+        env = "INGEST_CONCURRENCY_MAX",
+        default_value_t = 500
     )]
-    pub checkpoint_buffer_size: usize,
+    pub ingest_concurrency_max: usize,
 
     #[arg(
         id = "retry_interval_ms",
@@ -236,6 +231,98 @@ pub struct Ingestion {
         default_value_t = 5000
     )]
     pub streaming_statement_timeout_ms: u64,
+}
+
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+pub enum IngestionSource {
+    /// Ingest checkpoints from a store like https://checkpoints.testnet.sui.io
+    Store,
+
+    /// Ingest checlpoints from a fullnode like https://fullnode.testnet.sui.io:443
+    Fullnode,
+
+    // Ingest checkpoints from a local file path
+    Local,
+}
+
+#[derive(Parser)]
+pub struct IngestionClient {
+    #[arg(
+        id = "ingestion_source",
+        long = "ingestion_source",
+        env = "INGESTION_SOURCE",
+        default_value="Store",
+    )]
+    pub ingestion_source: IngestionSource,
+
+    #[arg(
+        id = "remote_store_url",
+        long = "remote_store_url",
+        env = "REMOTE_STORE_URL"
+    )]
+    pub remote_store_url: Option<String>,
+
+    #[arg(
+        id = "remote_store_s3",
+        long = "remote_store_s3",
+        env = "REMOTE_STORE_S3"
+    )]
+    pub remote_store_s3: Option<String>,
+
+    #[arg(
+        id = "remote_store_gcs",
+        long = "remote_store_gcs",
+        env = "REMOTE_STORE_GCS"
+    )]
+    pub remote_store_gcs: Option<String>,
+
+    #[arg(
+        id = "remote_store_azure",
+        long = "remote_store_azure",
+        env = "REMOTE_STORE_AZURE"
+    )]
+    pub remote_store_azure: Option<String>,
+
+    #[arg(
+        id = "remote_store_headers",
+        long = "remote_store_headers",
+        env = "REMOTE_STORE_HEADERS",
+        value_delimiter = ',',
+        value_parser = parse_remote_store_header
+    )]
+    pub remote_store_headers: Vec<(HeaderName, HeaderValue)>,
+
+    #[arg(
+        id = "local_ingestion_path",
+        long = "local_ingestion_path",
+        env = "LOCAL_INGESTION_PATH"
+    )]
+    pub local_ingestion_path: Option<PathBuf>,
+
+    #[arg(id = "rpc_api_url", long = "rpc_api_url", env = "RPC_API_URL")]
+    pub rpc_api_url: Option<Url>,
+
+    #[arg(id = "rpc_username", long = "rpc_username", env = "RPC_USERNAME")]
+    pub rpc_username: Option<String>,
+
+    #[arg(id = "rpc_password", long = "rpc_password", env = "RPC_PASSWORD")]
+    pub rpc_password: Option<String>,
+
+    #[arg(
+        id = "checkpoint_timeout_ms",
+        long = "checkpoint_timeout_ms",
+        env = "CHECKPOINT_TIMEOUT_MS",
+        default_value_t = 120_000
+    )]
+    pub checkpoint_timeout_ms: u64,
+
+    #[arg(
+        id = "checkpoint_connection_timeout_ms",
+        long = "checkpoint_connection_timeout_ms",
+        env = "CHECKPOINT_CONNECTION_TIMEOUT_MS",
+        default_value_t = 120_000
+    )]
+    pub checkpoint_connection_timeout_ms: u64,
 }
 
 #[derive(Debug, Clone, Copy, clap::ValueEnum)]
@@ -280,8 +367,8 @@ pub struct SandboxArgs {
     pub world_packages: Vec<String>,
 
     #[clap(
-        id = "local_ingention_path",
-        long = "local_ingestion_path",
+        id = "sandbox_ingention_path",
+        long = "sandbox_ingestion_path",
         env = "SANDBOX_INGESTION_PATH"
     )]
     pub local_ingestion_path: Option<PathBuf>,
@@ -372,7 +459,15 @@ pub struct AppConfig {
     #[command(flatten)]
     pub ingestion: Ingestion,
 
-    #[arg(id = "sui_network", long = "sui_network", env = "SUI_NETWORK", default_value = "testnet")]
+    #[command(flatten)]
+    pub ingestion_client: IngestionClient,
+
+    #[arg(
+        id = "sui_network",
+        long = "sui_network",
+        env = "SUI_NETWORK",
+        default_value = "testnet"
+    )]
     pub network: Option<AppEnv>,
 
     #[arg(id = "packages", long = "packages", env = "PACKAGES", value_enum, default_values = ["app", "world"], value_delimiter = ',')]
@@ -391,4 +486,17 @@ pub struct AppConfig {
 
     #[command(flatten)]
     pub sandbox: SandboxArgs,
+}
+
+fn parse_remote_store_header(header: &str) -> Result<(HeaderName, HeaderValue), String> {
+    let (name, value) = header
+        .split_once(':')
+        .ok_or_else(|| "remote store header must be in `<name>:<value>` format".to_string())?;
+
+    let name = HeaderName::from_bytes(name.as_bytes())
+        .map_err(|err| format!("invalid remote store header name `{name}`: {err}"))?;
+    let value = HeaderValue::from_str(value)
+        .map_err(|err| format!("invalid remote store header value for `{name}`: {err}"))?;
+
+    Ok((name, value))
 }
