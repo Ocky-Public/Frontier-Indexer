@@ -37,6 +37,7 @@ impl StoredOwnerCap {
         let owner_address = match obj.owner {
             Owner::AddressOwner(address) => address.to_string(),
             Owner::ObjectOwner(address) => address.to_string(),
+            Owner::Party { .. } => "party".to_string(),
             Owner::Shared { .. } => "shared".to_string(),
             Owner::Immutable => "immutable".to_string(),
             Owner::ConsensusAddressOwner { owner, .. } => owner.to_string(),
