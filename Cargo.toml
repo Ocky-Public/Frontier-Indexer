@@ -1,46 +1,65 @@
 [package]
 name = "indexer"
 version = "0.3.5"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-tokio = "1.47.1"
-serde = "1.0.217"
-serde_json = "1.0.138"
-anyhow = "1.0.98"
-tracing = "0.1.41"
-clap = "4.5.31"
-async-trait = "0.1.83"
-bcs = "0.1.6"
-url = "2.5.4"
+tokio = "=1.52.1"
+anyhow = "1.0.71"
+tracing = "0.1.37"
+async-trait = "0.1.61"
+bcs = "0.1.4"
+url = "2.3.1"
 dotenvy = "0.15"
-hex = "0.4"
+hex = "0.4.3"
 bigdecimal = "0.4"
-prometheus = "0.14.0"
-strum = "0.28.0"
-strum_macros = "0.28.0"
-futures = "0.3.32"
-axum = "0.8.9"
+strum_macros = "0.27.1"
+futures = "0.3.28"
+http = "1.4.1"
 
+serde = { version = "1.0.144", features = ["derive", "rc"] }
+serde_json = { version = "1.0.95", features = ["preserve_order"] }
+clap = { version = "4.4", features = ["derive", "wrap_help"] }
+prometheus = { version = "0.14", features = ["protobuf"] }
+strum = { version = "0.27.1", features = ["derive"] }
 toml = { version = "0.8", features = ["parse"] }
+reqwest = { version = "0.12", default-features = false, features = [
+  "http2",
+  "json",
+  "rustls-tls",
+] }
+axum = { version = "0.8", default-features = false, features = [
+  "macros",
+  "tokio",
+  "http1",
+  "http2",
+  "json",
+  "matched-path",
+  "original-uri",
+  "form",
+  "query",
+  "ws",
+] }
 
 # References forked sui with custom framework
-sui-pg-db = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
-sui-types = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
-move-core-types = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
-telemetry-subscribers = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
-sui-indexer-alt-metrics = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
-sui-indexer-alt-framework = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
-sui-indexer-alt-framework-store-traits = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
+sui-pg-db = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+sui-types = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+move-core-types = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+telemetry-subscribers = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+sui-indexer-alt-metrics = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+sui-indexer-alt-framework = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+sui-indexer-alt-framework-store-traits = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+sui-transaction-builder = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
 
-sui-sdk-types = { git = "https://github.com/mystenlabs/sui-rust-sdk", features = ["serde"], rev = "048124e484f14b9bf2a402227c9bc255c7621bc1" }
-sui-transaction-builder = { git = "https://github.com/mystenlabs/sui-rust-sdk", rev = "048124e484f14b9bf2a402227c9bc255c7621bc1" }
+sui-sdk-types = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "5b41bc701525f1b94f1fe63008d4841bc6fb1065", features = [ "hash", "serde" ] }
+sui-crypto = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "5b41bc701525f1b94f1fe63008d4841bc6fb1065", features = [ "ed25519", "secp256r1", "secp256k1", "passkey", "zklogin" ] }
+sui-rpc = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "5b41bc701525f1b94f1fe63008d4841bc6fb1065", features = [ "unstable" ] }
 
 # Database
-chrono = { version = "0.4", features = ["serde"] }
-diesel = { version = "2.2.12", features = ["postgres", "r2d2", "chrono"] }
-diesel_migrations = "2.2.0"
-diesel-async = { version = "0.5.2", features = ["bb8", "postgres", "async-connection-wrapper"] }
+chrono = { version = "0.4.44", features = ["clock", "serde"] }
+diesel = { version = "2.3", features = ["postgres", "r2d2", "chrono"] }
+diesel_migrations = "2.3"
+diesel-async = { version = "0.9", features = ["bb8", "postgres", "async-connection-wrapper"] }
 
 # Transports
 async-nats = "0.38"
@@ -57,7 +76,7 @@ insta = { version = "1.43.1", features = ["json"] }
 sqlx = { version = "0.8.3", features = ["runtime-tokio", "postgres", "chrono", "bigdecimal"] }
 fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto", rev = "4db0e90c732bbf7420ca20de808b698883148d9c" }
 
-sui-storage = { git = "https://github.com/Ocky-Public/sui.git", branch = "testnet" }
+sui-storage = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
 
 [[bin]]
 name = "indexer"

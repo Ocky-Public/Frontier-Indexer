@@ -1,17 +1,18 @@
 use anyhow::Context;
 use clap::Parser;
 use prometheus::Registry;
+use std::num::NonZeroUsize;
 use std::path::Path;
 use url::Url;
 
 use diesel_async::RunQueryDsl;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
+use diesel_migrations::{EmbeddedMigrations, embed_migrations};
 
 use sui_indexer_alt_framework::ingestion::ingestion_client::IngestionClientArgs;
 use sui_indexer_alt_framework::ingestion::streaming_client::StreamingClientArgs;
 use sui_indexer_alt_framework::ingestion::{ClientArgs, IngestionConfig};
 use sui_indexer_alt_framework::pipeline::sequential::SequentialConfig;
-use sui_indexer_alt_framework::pipeline::CommitterConfig;
+use sui_indexer_alt_framework::pipeline::{CommitterConfig, ConcurrencyConfig};
 use sui_indexer_alt_framework::{Indexer, IndexerArgs};
 use sui_indexer_alt_metrics::db::DbConnectionStatsCollector;
 use sui_indexer_alt_metrics::{MetricsArgs, MetricsService};
@@ -23,7 +24,6 @@ use indexer::models::system::FuelRegistry;
 use indexer::models::system::TableRegistry;
 use indexer::pipelines::*;
 use indexer::transports::*;
-use indexer::TESTNET_REMOTE_STORE_URL;
 use indexer::{AppContext, AppEnv};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
@@ -42,6 +42,7 @@ async fn main() -> Result<(), anyhow::Error> {
         indexer,
         sequential,
         ingestion,
+        ingestion_client,
         network,
         packages,
         transport_config,
@@ -97,11 +98,8 @@ async fn main() -> Result<(), anyhow::Error> {
         ..Default::default()
     };
 
-    let streaming_args = StreamingClientArgs::default();
-
     let Sequential {
         min_eager_rows,
-        checkpoint_lag,
         max_batch_checkpoints,
         processor_channel_size,
         write_concurrency,
@@ -111,21 +109,20 @@ async fn main() -> Result<(), anyhow::Error> {
     } = sequential;
 
     let sequential = SequentialConfig {
-        min_eager_rows,
-        checkpoint_lag,
-        max_batch_checkpoints,
-        processor_channel_size,
         committer: CommitterConfig {
             write_concurrency,
             collect_interval_ms,
             watermark_interval_ms,
             watermark_interval_jitter_ms,
         },
+        min_eager_rows,
+        max_batch_checkpoints,
+        processor_channel_size,
         ..Default::default()
     };
 
     let Ingestion {
-        checkpoint_buffer_size,
+        ingest_concurrency_max,
         retry_interval_ms,
         streaming_backoff_initial_batch_size,
         streaming_backoff_max_batch_size,
@@ -134,20 +131,47 @@ async fn main() -> Result<(), anyhow::Error> {
     } = ingestion;
 
     let ingestion = IngestionConfig {
-        checkpoint_buffer_size,
         retry_interval_ms,
-        streaming_backoff_initial_batch_size,
+        streaming_backoff_initial_batch_size: NonZeroUsize::new(
+            streaming_backoff_initial_batch_size,
+        )
+        .expect("Failed to parse streaming_backoff_initial_batch_size"),
         streaming_backoff_max_batch_size,
         streaming_connection_timeout_ms,
         streaming_statement_timeout_ms,
+        ingest_concurrency: ConcurrencyConfig::Adaptive {
+            initial: 1,
+            min: 1,
+            max: ingest_concurrency_max,
+            dead_band: None,
+        },
         ..Default::default()
     };
 
-    let (env, ingestion_args, packages) = if sandbox.enabled {
+    let IngestionClient {
+        ingestion_source,
+        remote_store_url,
+        remote_store_s3,
+        remote_store_gcs,
+        remote_store_azure,
+        remote_store_headers,
+        local_ingestion_path,
+        rpc_api_url,
+        rpc_username,
+        rpc_password,
+        checkpoint_timeout_ms,
+        checkpoint_connection_timeout_ms,
+    } = ingestion_client;
+
+    let (env, ingestion_args, streaming_args, packages) = if sandbox.enabled {
         // Sandbox mode - override package addresses then pick ingestion source
         let has_world = !sandbox.world_packages.is_empty();
 
         indexer::sandbox::init_package_override(sandbox.app_package_ids, sandbox.world_packages);
+
+        let app_env = match sandbox.env {
+            SandboxEnv::Testnet | SandboxEnv::Localnet => AppEnv::Testnet,
+        };
 
         let ingestion = match sandbox.env {
             SandboxEnv::Localnet => IngestionClientArgs {
@@ -160,7 +184,12 @@ async fn main() -> Result<(), anyhow::Error> {
             },
             SandboxEnv::Testnet => IngestionClientArgs {
                 remote_store_url: Some(
-                    Url::parse(TESTNET_REMOTE_STORE_URL).expect("invalid testnet remote store URL"),
+                    Url::parse(
+                        remote_store_url
+                            .unwrap_or(app_env.remote_store_url().to_string())
+                            .as_str(),
+                    )
+                    .expect("invalid testnet remote_store_url"),
                 ),
                 ..Default::default()
             },
@@ -172,19 +201,51 @@ async fn main() -> Result<(), anyhow::Error> {
             packages.retain(|p| matches!(p, Package::App));
         }
 
-        let app_env = match sandbox.env {
-            SandboxEnv::Testnet | SandboxEnv::Localnet => AppEnv::Testnet,
-        };
+        let streaming = StreamingClientArgs::default();
 
-        (app_env, ingestion, packages)
+        (app_env, ingestion, streaming, packages)
     } else {
         let env = network.context("network is required when not using sandbox")?;
-        let ingestion = IngestionClientArgs {
-            remote_store_url: Some(env.remote_store_url()),
-            ..Default::default()
+        let ingestion = match ingestion_source {
+            IngestionSource::Store => IngestionClientArgs {
+                remote_store_url: Some(
+                    Url::parse(
+                        remote_store_url
+                            .unwrap_or(env.remote_store_url().to_string())
+                            .as_str(),
+                    )
+                    .expect("Invalid remote_store_url"),
+                ),
+                remote_store_s3,
+                remote_store_gcs,
+                remote_store_azure,
+                remote_store_headers,
+                checkpoint_timeout_ms,
+                checkpoint_connection_timeout_ms,
+                ..Default::default()
+            },
+            IngestionSource::Fullnode => IngestionClientArgs {
+                rpc_api_url: Some(rpc_api_url.unwrap_or(env.fullnode_url())),
+                rpc_username,
+                rpc_password,
+                checkpoint_timeout_ms,
+                checkpoint_connection_timeout_ms,
+                ..Default::default()
+            },
+            IngestionSource::Local => IngestionClientArgs {
+                local_ingestion_path,
+                checkpoint_timeout_ms,
+                checkpoint_connection_timeout_ms,
+                ..Default::default()
+            },
         };
 
-        (env, ingestion, packages)
+        let streaming = StreamingClientArgs {
+            streaming_url: Some(env.streaming_url()),
+            ..StreamingClientArgs::default()
+        };
+
+        (env, ingestion, streaming, packages)
     };
 
     let registry = Registry::new_custom(Some("frontier".into()), None)

@@ -1,3 +1,4 @@
+use http::Uri;
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -28,7 +29,10 @@ pub mod transports;
 pub const NOT_MAINNET_PACKAGE: &str = "<not on mainnet>";
 
 pub const MAINNET_REMOTE_STORE_URL: &str = "https://checkpoints.mainnet.sui.io";
+pub const MAINNET_RPC_URL: &str = "https://fullnode.mainnet.sui.io:443";
+
 pub const TESTNET_REMOTE_STORE_URL: &str = "https://checkpoints.testnet.sui.io";
+pub const TESTNET_RPC_URL: &str = "https://fullnode.testnet.sui.io:443";
 
 const MAINNET_PACKAGES: &[&str] = &[];
 
@@ -218,7 +222,23 @@ impl AppEnv {
             AppEnv::Mainnet => MAINNET_REMOTE_STORE_URL,
             AppEnv::Testnet => TESTNET_REMOTE_STORE_URL,
         };
-        Url::parse(url).unwrap()
+        Url::parse(url).expect("Could not parse remote_store_url")
+    }
+
+    pub fn fullnode_url(&self) -> Url {
+        let url = match self {
+            AppEnv::Mainnet => MAINNET_RPC_URL,
+            AppEnv::Testnet => TESTNET_RPC_URL,
+        };
+        Url::parse(url).expect("Could not parse remote_store_url")
+    }
+
+    pub fn streaming_url(&self) -> Uri {
+        let url = match self {
+            AppEnv::Mainnet => MAINNET_RPC_URL,
+            AppEnv::Testnet => TESTNET_RPC_URL,
+        };
+        url.parse::<Uri>().expect("Could not parse streaming_url")
     }
 }
 

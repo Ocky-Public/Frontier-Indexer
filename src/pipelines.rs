@@ -20,7 +20,7 @@ impl PipelineConfig {
         let enabled: Vec<String> = self
             .pipelines
             .iter()
-            .filter(|(_, &v)| v)
+            .filter(|&(_, &v)| v)
             .map(|(k, _)| k.clone())
             .collect();
 
