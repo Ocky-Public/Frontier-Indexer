@@ -1,0 +1,1 @@
+Todo: Describe how data retention works in timescale db and how to adjust it for the hypertables in the indexer database.
