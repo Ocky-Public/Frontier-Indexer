@@ -7,16 +7,12 @@ use crate::models::world::*;
 use crate::transports::Routing;
 
 pub struct SocketIoTransport {
-    id: String,
     io: SocketIo,
 }
 
 impl SocketIoTransport {
-    pub fn new(id: &str, io: SocketIo) -> Self {
-        Self {
-            id: id.to_string(),
-            io,
-        }
+    pub fn new(io: SocketIo) -> Self {
+        Self { io }
     }
 
     async fn send<I: Serialize + Send + Sync + 'static>(
@@ -270,7 +266,11 @@ impl Routing<StoredNetworkNodeCreated> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<NetworkNodeAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &NetworkNodeAction) -> anyhow::Result<()> {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        action: &NetworkNodeAction,
+    ) -> anyhow::Result<()> {
         match action {
             NetworkNodeAction::Upsert(item) => {
                 let room = item.id.clone();
@@ -324,7 +324,11 @@ impl Routing<StoredStorageUnitExtensionRevoked> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<StorageUnitAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &StorageUnitAction) -> anyhow::Result<()> {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        action: &StorageUnitAction,
+    ) -> anyhow::Result<()> {
         match action {
             StorageUnitAction::Freeze(item) => {
                 let room = item.id.clone();

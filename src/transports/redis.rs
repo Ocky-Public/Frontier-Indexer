@@ -6,22 +6,16 @@ use crate::models::world::*;
 use crate::transports::Routing;
 
 pub struct RedisTransport {
-    id: String,
     manager: redis::aio::ConnectionManager,
     channel_prefix: String,
 }
 
 impl RedisTransport {
-    pub async fn connect(
-        id: &str,
-        url: &str,
-        channel_prefix: impl Into<String>,
-    ) -> anyhow::Result<Self> {
+    pub async fn connect(url: &str, channel_prefix: impl Into<String>) -> anyhow::Result<Self> {
         let client = redis::Client::open(url)?;
         let manager = redis::aio::ConnectionManager::new(client).await?;
 
         Ok(Self {
-            id: id.to_string(),
             manager,
             channel_prefix: channel_prefix.into(),
         })
