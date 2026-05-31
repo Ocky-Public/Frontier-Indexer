@@ -251,7 +251,7 @@ pub struct IngestionClient {
         id = "ingestion_source",
         long = "ingestion_source",
         env = "INGESTION_SOURCE",
-        default_value="Store",
+        default_value="store",
     )]
     pub ingestion_source: IngestionSource,
 
