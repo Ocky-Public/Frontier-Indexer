@@ -2,10 +2,7 @@
 
 This guide walks through the different ways Move on-chain data is represented in Sui checkpoints, and how this indexer reads each one. The patterns here are used consistently throughout every handler in `src/handlers/world/`.
 
----
-
 ## Background
-
 When the indexer receives a checkpoint it gets access to two sources of data:
 
 - **Object changes** — every object that was created, mutated, or deleted in that checkpoint.
@@ -13,10 +10,7 @@ When the indexer receives a checkpoint it gets access to two sources of data:
 
 Both are delivered as raw BCS-encoded bytes. The indexer deserializes those bytes into Rust structs that mirror the original Move struct layout, then maps them into the database model types.
 
----
-
 ## Pattern 1: Plain Move Objects
-
 Most world contract state lives in regular Move objects (e.g. `Assembly`, `Gate`, `Character`). These are straightforward to index:
 
 **Step 1 — Define a `Move*` struct that mirrors the on-chain layout**
@@ -41,21 +35,30 @@ pub struct MoveAssembly {
 
 **Step 2 — Define a `Stored*` struct for the database row**
 
-This is the Diesel model. Types are mapped to what PostgreSQL can store (e.g. `u64` → `i64`, `Address` → `String`).
+This is the Diesel model. Types are mapped to what PostgreSQL can store (e.g. `u64` → `i64`, `Address` → `String`). Each stored struct typically has a `checkpoint_updated` field at the end to ensure that only newer data overrides already indexed data.
 
 ```rust
 #[derive(Insertable, Debug, Clone, FieldCount)]
 #[diesel(table_name = assemblies)]
 pub struct StoredAssembly {
     pub id: String,
+    pub item_id: String,
+    pub tenant: String,
     pub type_id: i64,
     pub owner_cap_id: String,
-    // ...
+    pub location: String,
+    pub status: String,
+    pub energy_source_id: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub url: Option<String>,
     pub checkpoint_updated: i64,
 }
 ```
 
 **Step 3 — Deserialize in `from_object`**
+
+Along with defining a stored struct, a function is also added that is used to convert from the move struct to the stored struct.
 
 ```rust
 impl StoredAssembly {
@@ -67,10 +70,30 @@ impl StoredAssembly {
         let assembly: MoveAssembly =
             bcs::from_bytes(bytes).expect("Failed to deserialize Assembly object");
 
+        // Handle any unique fields that dont map cleanly from the move struct to the stored struct.
+        let location = format!("0x{:0>64}", hex::encode(&assembly.location.location_hash));
+
+        let energy_source_id = assembly.energy_source_id.map(|source| source.to_hex());
+
+        let (name, description, url) = assembly
+            .metadata
+            .map(|meta| (Some(meta.name), Some(meta.description), Some(meta.url)))
+            .unwrap_or_default();
+
+        // Return the fully populated stored struct.
         Self {
             id: assembly.id.to_hex(),
+            item_id: assembly.key.item_id.to_string(),
+            tenant: assembly.key.tenant,
             type_id: assembly.type_id as i64,
-            // ...
+            owner_cap_id: assembly.owner_cap_id.to_hex(),
+            location,
+            status: assembly.status.status.as_ref().to_string(),
+            energy_source_id,
+            name,
+            description,
+            url,
+            checkpoint_updated,
         }
     }
 }
@@ -78,7 +101,7 @@ impl StoredAssembly {
 
 **Step 4 — Detect and process the object in the handler**
 
-`AppContext::is_world_object` checks that the object's package address is one of the known world packages, and that its module and struct name match.
+`AppContext` includes a collection of functions that can be used to determing if a transaction, object, table, etc. should be indexed. There should be plenty of example handlers in the world section showing how to structure a handler and use these functions:
 
 ```rust
 // src/handlers/world/assemblies/assemblies/assembly_handler.rs
@@ -88,7 +111,7 @@ fn is_assembly(&self, obj: &Object) -> bool {
 }
 ```
 
-Inside `process`, the handler iterates over every object change in every transaction and calls `from_object` when the check passes:
+Inside the handler's `process` function, the handler iterates over every object change in every transaction and calls `from_object` when the check passes:
 
 ```rust
 if self.is_assembly(obj) {
@@ -97,10 +120,7 @@ if self.is_assembly(obj) {
 }
 ```
 
----
-
 ## Pattern 2: Events
-
 Some state transitions are only visible through the events emitted by a transaction (e.g. a gate jump, an item deposit). The handler listens for a named event type rather than watching object changes.
 
 **Step 1 — Mirror the Move event struct**
@@ -144,7 +164,7 @@ impl StoredItemDeposited {
 
 **Step 3 — Detect and process the event in the handler**
 
-`AppContext::is_world_event` checks the event's module name, event name, and package address.
+`AppContext` also includes helper function to check if an event should be indexed.
 
 ```rust
 // src/handlers/world/primitives/inventories/item_deposited_handler.rs

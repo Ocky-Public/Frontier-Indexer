@@ -15,8 +15,10 @@ The project uses the [Diesel CLI](https://diesel.rs/guides/getting-started) to m
 
 1. Set the database URL:
    ```sh
-   PSQL_URL=postgres://username@localhost:5432/sui_indexer
+   PSQL_URL=postgres://[user]:[password]@[host]:5432/[database]?options=-csearch_path%3D[schema]
    ```
+> [!NOTE]
+> It is important to include the `search_path` in the connection string if you want everything contained in the specified schema. Without it Diesel will put internal functions and tables in the `public` schema and it becomes much harder to cleanly manage everything related to the indexer.
 
 2. Verify the connection works:
    ```sh
@@ -53,12 +55,13 @@ The project uses the [Diesel CLI](https://diesel.rs/guides/getting-started) to m
 
 ## Models
 The data models are defined in `src/models/`. They are split into:
-- **World Models**: Represent the state of the world contracts (e.g., `src/models/world.rs`).
-- **System Models**: Represent internal indexer state or registry information (e.g., `src/models/system.rs`).
+- **App Models**: Contains application-specific object models. If you are indexing your own application data alongside the world data then keep the models here.
+- **World Models**: Contains models related to the state of the world contracts (e.g., `src/models/world.rs`).
+- **System Models**: Containes internal indexer models or models used to more efficiently index the world contracts (e.g., `src/models/system.rs`).
 
 ## Registries
 The system uses "Registries" to load configuration from the database at startup:
-- `TableRegistry`: Tracks which tables are currently registered and should be indexed.
-- `FuelRegistry`: Manages fuel-related configuration stored in the database.
+- `TableRegistry`: Tracks which objects contain tables that should be indexed.
+- `FuelRegistry`: Cached fuel efficiecny values used to calculate remaining fuel data faster.
 
-These are loaded in `main.rs` and passed into the `AppContext`, allowing handlers to make decisions based on database-stored configuration.
+Registries are loaded in `main.rs` and passed into the `AppContext`, allowing handlers to access this data while parsing checkpoints.
