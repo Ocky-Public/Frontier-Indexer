@@ -101,7 +101,7 @@ impl StoredAssembly {
 
 **Step 4 — Detect and process the object in the handler**
 
-`AppContext` includes a collection of functions that can be used to determing if a transaction, object, table, etc. should be indexed. There should be plenty of example handlers in the world section showing how to structure a handler and use these functions:
+`AppContext` includes a collection of functions that can be used to determining if a transaction, object, table, etc. should be indexed. There should be plenty of example handlers in the world section showing how to structure a handler and use these functions:
 
 ```rust
 // src/handlers/world/assemblies/assemblies/assembly_handler.rs

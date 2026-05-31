@@ -57,11 +57,11 @@ The project uses the [Diesel CLI](https://diesel.rs/guides/getting-started) to m
 The data models are defined in `src/models/`. They are split into:
 - **App Models**: Contains application-specific object models. If you are indexing your own application data alongside the world data then keep the models here.
 - **World Models**: Contains models related to the state of the world contracts (e.g., `src/models/world.rs`).
-- **System Models**: Containes internal indexer models or models used to more efficiently index the world contracts (e.g., `src/models/system.rs`).
+- **System Models**: Contains internal indexer models or models used to more efficiently index the world contracts (e.g., `src/models/system.rs`).
 
 ## Registries
 The system uses "Registries" to load configuration from the database at startup:
 - `TableRegistry`: Tracks which objects contain tables that should be indexed.
-- `FuelRegistry`: Cached fuel efficiecny values used to calculate remaining fuel data faster.
+- `FuelRegistry`: Cached fuel efficiency values used to calculate remaining fuel data faster.
 
 Registries are loaded in `main.rs` and passed into the `AppContext`, allowing handlers to access this data while parsing checkpoints.

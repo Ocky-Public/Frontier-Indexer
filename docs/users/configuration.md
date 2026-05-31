@@ -52,7 +52,7 @@ Controls where the indexer fetches data from.
 | `CHECKPOINT_CONNECTION_TIMEOUT_MS` | How long to wait while establishing a connection to the checkpoint store (milliseconds). Set to 0 to disable the timeout.                                                                            | `120000`                                                                  |
 
 > [!Note]
-> The ingestion source determines which of the values above are used. As an exmaple, setting gRPC values while `store` is selected as the source will not use the gRPC values.
+> The ingestion source determines which of the values above are used. As an example, setting gRPC values while `store` is selected as the source will not use the gRPC values.
 >
 > Importantly only one remote store option will be used at a time in the order they are listed above.
 > If `REMOTE_STORE_URL` is set then it will be used even if `REMOTE_STORE_AZURE` is also set.

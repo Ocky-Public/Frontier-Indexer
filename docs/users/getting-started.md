@@ -1,8 +1,14 @@
-Todo: Describe a very simple docker-compose setup that can be used for the deployment of the indexer and related services.
+# Getting Started
+The Frontier Indexer is designed to be easy to deploy using Docker. This guide will walk you through the quickest way to get the indexer running by running it as a container.
 
-Here is a very simple example of such as docker-compose deployment:
+## Deployment via Container Registry
+If you don't intend to customize the indexer and just want to run it, you can pull the official image from the [GitHub Container Registry](https://github.com/Ocky-Public/Frontier-Indexer/pkgs/container/frontier-indexer).
 
-```
+### Example Docker Compose Deployment
+
+Create a `docker-compose.yml` file with the following content:
+
+```yaml
 services:
   postgresql:
     image: timescale/timescaledb-ha:pg17
@@ -41,9 +47,6 @@ services:
       DB_SCHEMA: indexer
       DB_CONNECTION_POOL_SIZE: 10
 
-      INGESTION_SOURCE: fullnode
-      INGEST_CONCURRENCY_MAX: 1
-
     volumes:
       - ./indexer/pipelines.toml:/opt/indexer/bin/pipelines.toml
     restart: on-failure
@@ -62,9 +65,44 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - 3004:3000
+      - 8081:3000
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=Grafan@321
     depends_on:
       - prometheus
 ```
+
+This file will deploy a collection of containers and create directoryies in the same location as this file for the containers that require storge space:
+- TimescaleDB container with a `postgresql` directory to store database.
+- PgAdmin container with a `pgadmin` directory to store user information. User as the administrative tool for the database and can be access at `http://localhost:8080`
+- Indexer container with a `indexer` directory. This direcctory contains the `pipelines.toml` file which can be used to enable or disable any of the pipeline in the indexer.
+- Prometheus container with a `prometheus` directory to store configuration and data.
+- Grafana container used to query and visualize the prometheus data. Can be accessed at `http://localhost:8081`
+
+If you already have your own administrative or monitoring solutions you can omit those entries from the file or replacce it with other solutions you might prefer.
+
+Run it with:
+```sh
+docker compose up -d
+```
+
+### Configuring Prometheus
+The above exmaple deploys a prometheus container as part of the stack. In order for prometheus to collect data from the indexer it requires a configuration file.
+The file will be located at `/prometheus/prometheus.yml` and a simple example configuration looks as follows:
+
+``` yaml
+# prometheus.yml
+global:
+  scrape_interval: 30s
+
+scrape_configs:
+  - job_name: 'frontier-indexer'
+    static_configs:
+      - targets: ['indexer:9184'] # Change to your indexer host and port
+```
+Once in place you can restart the prometheus container and it should start recording telemetry for the indexer.
+
+## Next Steps
+
+- **Configuration**: To customize how the indexer behaves, see the [Container Configuration](configuration.md) guide.
+- **Developer Docs**: If you want to extend the indexer with your own smart contract handlers, visit the [Developer Documentation](../developers/).

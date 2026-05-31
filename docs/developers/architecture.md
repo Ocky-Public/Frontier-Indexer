@@ -23,7 +23,7 @@ Sequential Pipelines    Checkpoint content is broadcasted to all registered Hand
 Handlers                Filters checkpoint data to relevant packages and transforms data for storage / emitting
   |
   v
-Database                Batches of events and object updates are stored in PostgeSQL via Diesel
+Database                Batches of events and object updates are stored in PostgreSQL via Diesel
   |
   v
 Event Emitter           Batches are emitted to registered transport protocols only after successful commit to database.
