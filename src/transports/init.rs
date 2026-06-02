@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use serde::Serialize;
-use socketioxide::SocketIo;
+use socketioxide::{SocketIo, extract::SocketRef};
 
 use crate::config::TransportConfig;
 use crate::transports::AmqpTransport;
@@ -29,6 +29,11 @@ impl Transports {
         // SocketIO
         if let Some(addr) = cfg.socketio.url {
             let (layer, io) = SocketIo::new_layer();
+
+            io.ns("/", |socket: SocketRef| async move {
+                tracing::trace!("Client connected to default namespace: {}", socket.id);
+            });
+
             let app = axum::Router::new().layer(layer);
             let listener = tokio::net::TcpListener::bind(addr)
                 .await
