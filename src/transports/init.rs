@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use serde::Serialize;
-use socketioxide::{SocketIo, extract::SocketRef};
+use socketioxide::SocketIo;
+use socketioxide::extract::{Data, SocketRef};
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::config::TransportConfig;
 use crate::transports::AmqpTransport;
@@ -31,10 +33,37 @@ impl Transports {
             let (layer, io) = SocketIo::new_layer();
 
             io.ns("/", |socket: SocketRef| async move {
-                tracing::trace!("Client connected to default namespace: {}", socket.id);
+                tracing::info!("Client connected to default namespace: {}", socket.id);
+
+                socket.on(
+                    "join",
+                    |socket: SocketRef, Data(room_id): Data<String>| async move {
+                        tracing::info!("Socket {} attempting to join room: {}", socket.id, room_id);
+
+                        // Join the room and handle potential errors
+                        match socket.join(room_id.clone()) {
+                            Ok(_) => {
+                                tracing::info!(
+                                    "Socket {} successfully joined room: {}",
+                                    socket.id,
+                                    room_id
+                                );
+                            }
+                            Err(err) => {
+                                tracing::error!("Failed to join room {}: {:?}", room_id, err);
+                            }
+                        }
+                    },
+                )
             });
 
-            let app = axum::Router::new().layer(layer);
+            let cors = CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any);
+
+            let app = axum::Router::new().layer(layer).layer(cors);
+
             let listener = tokio::net::TcpListener::bind(addr)
                 .await
                 .with_context(|| format!("Failed to bind Socket.IO server to {}", addr))?;
