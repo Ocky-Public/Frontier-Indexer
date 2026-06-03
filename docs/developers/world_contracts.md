@@ -66,4 +66,4 @@ The way raw BCS bytes are decoded depends on what kind of Move value the object 
 | Table + TableRegistry | `Table<K, V>` entries — each entry is a separate on-chain object; the registry connects them to their parent |
 | Inline `VecMap` | `VecMap<K, V>` stored inside a parent object's BCS bytes (no separate objects) |
 
-For worked code examples of each pattern, see [Parsing Move Objects](./parsing-move-objects.md).
+For code examples of each pattern, see [Parsing Move Objects](./parsing-move-objects.md).

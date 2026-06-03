@@ -6,14 +6,12 @@ use crate::models::world::*;
 use crate::transports::Routing;
 
 pub struct AmqpTransport {
-    id: String,
     pool: deadpool_lapin::Pool,
     exchange: String,
 }
 
 impl AmqpTransport {
     pub async fn connect(
-        id: &str,
         addr: &str,
         exchange: impl Into<String>,
         pool_size: usize,
@@ -44,11 +42,7 @@ impl AmqpTransport {
                 .await?;
         }
 
-        Ok(Self {
-            id: id.to_string(),
-            pool,
-            exchange,
-        })
+        Ok(Self { pool, exchange })
     }
 
     async fn send<I: Serialize + Send + Sync + 'static>(

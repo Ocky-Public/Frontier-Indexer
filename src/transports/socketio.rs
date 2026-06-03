@@ -7,16 +7,12 @@ use crate::models::world::*;
 use crate::transports::Routing;
 
 pub struct SocketIoTransport {
-    id: String,
     io: SocketIo,
 }
 
 impl SocketIoTransport {
-    pub fn new(id: &str, io: SocketIo) -> Self {
-        Self {
-            id: id.to_string(),
-            io,
-        }
+    pub fn new(io: SocketIo) -> Self {
+        Self { io }
     }
 
     async fn send<I: Serialize + Send + Sync + 'static>(
@@ -25,7 +21,8 @@ impl SocketIoTransport {
         event: String,
         item: &I,
     ) -> anyhow::Result<()> {
-        let _ = self.io.to(room).emit(event, item);
+        let _ = self.io.to(room.clone()).emit(&event.clone(), item);
+        let _ = self.io.to("*").emit(format!("{}:{}", room, event), item);
         Ok(())
     }
 }
@@ -45,15 +42,15 @@ impl Routing<StoredOwnerCapCreated> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<OwnerCapAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &OwnerCapAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &OwnerCapAction) -> anyhow::Result<()> {
         match action {
             OwnerCapAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             OwnerCapAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -87,15 +84,15 @@ impl Routing<StoredAssemblyCreated> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<AssemblyAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &AssemblyAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &AssemblyAction) -> anyhow::Result<()> {
         match action {
             AssemblyAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             AssemblyAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -122,11 +119,11 @@ impl Routing<GateConfigAction> for SocketIoTransport {
         match action {
             GateConfigAction::Register(_table) => Ok(()),
             GateConfigAction::Upsert(item) => {
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(pipeline.to_string(), event, item).await
             }
             GateConfigAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(pipeline.to_string(), event, id_str).await
             }
         }
@@ -167,20 +164,20 @@ impl Routing<StoredGateExtensionRevoked> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<GateAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &GateAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &GateAction) -> anyhow::Result<()> {
         match action {
             GateAction::Freeze(item) => {
                 let room = item.id.clone();
-                let event = "extension_frozen".to_string();
+                let event = format!("{}:{}", pipeline, "extension_frozen");
                 self.send(room, event, item).await
             }
             GateAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             GateAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -202,7 +199,7 @@ impl Routing<StoredGateJumped> for SocketIoTransport {
 impl Routing<StoredGateLinked> for SocketIoTransport {
     async fn send(&self, pipeline: &'static str, item: &StoredGateLinked) -> anyhow::Result<()> {
         let room = item.departure_id.clone();
-        _ = self.send(room, pipeline.to_string(), item).await;
+        let _ = self.send(room, pipeline.to_string(), item).await;
 
         let room = item.destination_id.clone();
         self.send(room, pipeline.to_string(), item).await
@@ -211,15 +208,15 @@ impl Routing<StoredGateLinked> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<GatePermitAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &GatePermitAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &GatePermitAction) -> anyhow::Result<()> {
         match action {
             GatePermitAction::Upsert(item) => {
                 let room = item.character_id.clone();
-                let event = "gate_permit_updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             GatePermitAction::Delete(id_str) => {
-                let event = "gate_permit_deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -270,15 +267,15 @@ impl Routing<StoredNetworkNodeCreated> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<NetworkNodeAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &NetworkNodeAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &NetworkNodeAction) -> anyhow::Result<()> {
         match action {
             NetworkNodeAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             NetworkNodeAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -324,20 +321,20 @@ impl Routing<StoredStorageUnitExtensionRevoked> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<StorageUnitAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &StorageUnitAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &StorageUnitAction) -> anyhow::Result<()> {
         match action {
             StorageUnitAction::Freeze(item) => {
                 let room = item.id.clone();
-                let event = "extension_frozen".to_string();
+                let event = format!("{}:{}", pipeline, "extension_frozen");
                 self.send(room, event, item).await
             }
             StorageUnitAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             StorageUnitAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -379,20 +376,20 @@ impl Routing<StoredTurretExtensionRevoked> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<TurretAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &TurretAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &TurretAction) -> anyhow::Result<()> {
         match action {
             TurretAction::Freeze(item) => {
                 let room = item.id.clone();
-                let event = "extension_frozen".to_string();
+                let event = format!("{}:{}", pipeline, "extension_frozen");
                 self.send(room, event, item).await
             }
             TurretAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             TurretAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -418,10 +415,11 @@ impl Routing<CharacterAction> for SocketIoTransport {
         match action {
             CharacterAction::Upsert(item) => {
                 let room = item.id.clone();
-                self.send(room, pipeline.to_string(), item).await
+                let event = format!("{}:{}", pipeline, "updated");
+                self.send(room, event, item).await
             }
             CharacterAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -432,7 +430,8 @@ impl Routing<CharacterAction> for SocketIoTransport {
 #[async_trait]
 impl Routing<StoredKillmail> for SocketIoTransport {
     async fn send(&self, pipeline: &'static str, item: &StoredKillmail) -> anyhow::Result<()> {
-        self.send(pipeline.to_string(), item.id.clone(), item).await
+        let event = format!("{}:{}", pipeline, "updated");
+        self.send(pipeline.to_string(), event, item).await
     }
 }
 
@@ -447,11 +446,11 @@ impl Routing<EnergyConfigAction> for SocketIoTransport {
         match action {
             EnergyConfigAction::Register(_table) => Ok(()),
             EnergyConfigAction::Upsert(item) => {
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(pipeline.to_string(), event, item).await
             }
             EnergyConfigAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(pipeline.to_string(), event, id_str).await
             }
         }
@@ -549,11 +548,11 @@ impl Routing<FuelConfigAction> for SocketIoTransport {
         match action {
             FuelConfigAction::Register(_table) => Ok(()),
             FuelConfigAction::Upsert(item) => {
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(pipeline.to_string(), event, item).await
             }
             FuelConfigAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(pipeline.to_string(), event, id_str).await
             }
         }
@@ -583,8 +582,8 @@ impl Routing<StoredFuelEfficiencyRemoved> for SocketIoTransport {
         pipeline: &'static str,
         item: &StoredFuelEfficiencyRemoved,
     ) -> anyhow::Result<()> {
-        let room = item.type_id.to_string();
-        self.send(room, pipeline.to_string(), item).await
+        let event = format!("{}:{}", pipeline, "deleted");
+        self.send(pipeline.to_string(), event, item).await
     }
 }
 
@@ -595,8 +594,8 @@ impl Routing<StoredFuelEfficiencySet> for SocketIoTransport {
         pipeline: &'static str,
         item: &StoredFuelEfficiencySet,
     ) -> anyhow::Result<()> {
-        let room = item.type_id.to_string();
-        self.send(room, pipeline.to_string(), item).await
+        let event = format!("{}:{}", pipeline, "updated");
+        self.send(pipeline.to_string(), event, item).await
     }
 }
 
@@ -611,15 +610,15 @@ impl Routing<StoredFuelWithdrawn> for SocketIoTransport {
 // Inventories
 #[async_trait]
 impl Routing<InventoryAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &InventoryAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &InventoryAction) -> anyhow::Result<()> {
         match action {
             InventoryAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             InventoryAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }
@@ -652,15 +651,15 @@ impl Routing<StoredItemDestroyed> for SocketIoTransport {
 
 #[async_trait]
 impl Routing<ItemAction> for SocketIoTransport {
-    async fn send(&self, _pipeline: &'static str, action: &ItemAction) -> anyhow::Result<()> {
+    async fn send(&self, pipeline: &'static str, action: &ItemAction) -> anyhow::Result<()> {
         match action {
             ItemAction::Upsert(item) => {
                 let room = item.id.clone();
-                let event = "updated".to_string();
+                let event = format!("{}:{}", pipeline, "updated");
                 self.send(room, event, item).await
             }
             ItemAction::Delete(id_str) => {
-                let event = "deleted".to_string();
+                let event = format!("{}:{}", pipeline, "deleted");
                 self.send(id_str.clone(), event, id_str).await
             }
         }

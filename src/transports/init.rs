@@ -3,6 +3,8 @@ use std::sync::Arc;
 use anyhow::Context;
 use serde::Serialize;
 use socketioxide::SocketIo;
+use socketioxide::extract::{Data, SocketRef};
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::config::TransportConfig;
 use crate::transports::AmqpTransport;
@@ -29,7 +31,39 @@ impl Transports {
         // SocketIO
         if let Some(addr) = cfg.socketio.url {
             let (layer, io) = SocketIo::new_layer();
-            let app = axum::Router::new().layer(layer);
+
+            io.ns("/", |socket: SocketRef| async move {
+                tracing::info!("Client connected to default namespace: {}", socket.id);
+
+                socket.on(
+                    "join",
+                    |socket: SocketRef, Data(room_id): Data<String>| async move {
+                        tracing::info!("Socket {} attempting to join room: {}", socket.id, room_id);
+
+                        // Join the room and handle potential errors
+                        match socket.join(room_id.clone()) {
+                            Ok(_) => {
+                                tracing::info!(
+                                    "Socket {} successfully joined room: {}",
+                                    socket.id,
+                                    room_id
+                                );
+                            }
+                            Err(err) => {
+                                tracing::error!("Failed to join room {}: {:?}", room_id, err);
+                            }
+                        }
+                    },
+                )
+            });
+
+            let cors = CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any);
+
+            let app = axum::Router::new().layer(layer).layer(cors);
+
             let listener = tokio::net::TcpListener::bind(addr)
                 .await
                 .with_context(|| format!("Failed to bind Socket.IO server to {}", addr))?;
@@ -41,16 +75,15 @@ impl Transports {
             });
 
             tracing::info!("Socket.IO transport listening on {}", addr);
-            let transport = Arc::new(SocketIoTransport::new("socket.io", io));
+            let transport = Arc::new(SocketIoTransport::new(io));
             transports.push(TransportOption::SocketIo(transport));
         }
 
         // AMQP
         if let Some(url) = &cfg.amqp.url {
-            let transport =
-                AmqpTransport::connect("amqp", url, &cfg.amqp.exchange, cfg.amqp.pool_size)
-                    .await
-                    .context("Failed to connect AMQP transport")?;
+            let transport = AmqpTransport::connect(url, &cfg.amqp.exchange, cfg.amqp.pool_size)
+                .await
+                .context("Failed to connect AMQP transport")?;
 
             tracing::info!("AMQP transport connected to {}", url);
             transports.push(TransportOption::Amqp(Arc::new(transport)));
@@ -58,7 +91,7 @@ impl Transports {
 
         // NATS
         if let Some(url) = &cfg.nats.url {
-            let transport = NatsTransport::connect("nats", url, &cfg.nats.subject_prefix)
+            let transport = NatsTransport::connect(url, &cfg.nats.subject_prefix)
                 .await
                 .context("Failed to connect NATS transport")?;
 
@@ -68,7 +101,7 @@ impl Transports {
 
         // Redis
         if let Some(url) = &cfg.redis.url {
-            let transport = RedisTransport::connect("redis", url, &cfg.redis.channel_prefix)
+            let transport = RedisTransport::connect(url, &cfg.redis.channel_prefix)
                 .await
                 .context("Failed to connect Redis transport")?;
 

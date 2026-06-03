@@ -7,19 +7,13 @@ use crate::models::world::*;
 use crate::transports::Routing;
 
 pub struct NatsTransport {
-    id: String,
     client: Client,
     subject_prefix: String,
 }
 
 impl NatsTransport {
-    pub async fn connect(
-        id: &str,
-        url: &str,
-        subject_prefix: impl Into<String>,
-    ) -> anyhow::Result<Self> {
+    pub async fn connect(url: &str, subject_prefix: impl Into<String>) -> anyhow::Result<Self> {
         Ok(Self {
-            id: id.to_string(),
             client: async_nats::connect(url).await?,
             subject_prefix: subject_prefix.into(),
         })
