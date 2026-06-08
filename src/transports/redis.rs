@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use serde::Serialize;
 
 use crate::handlers::world::*;
+use crate::models::system::*;
 use crate::models::world::*;
 use crate::transports::Routing;
 
@@ -31,6 +32,18 @@ impl RedisTransport {
         let mut conn = self.manager.clone();
         redis::AsyncCommands::publish::<_, _, ()>(&mut conn, &channel, &payload).await?;
         Ok(())
+    }
+}
+
+// Transaction Digests
+#[async_trait]
+impl Routing<StoredTransactionDigest> for RedisTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredTransactionDigest,
+    ) -> anyhow::Result<()> {
+        self.send("transactions:digest".to_string(), item).await
     }
 }
 
