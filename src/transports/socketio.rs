@@ -3,6 +3,7 @@ use serde::Serialize;
 use socketioxide::SocketIo;
 
 use crate::handlers::world::*;
+use crate::models::system::*;
 use crate::models::world::*;
 use crate::transports::Routing;
 
@@ -24,6 +25,19 @@ impl SocketIoTransport {
         let _ = self.io.to(room.clone()).emit(&event.clone(), item);
         let _ = self.io.to("*").emit(format!("{}:{}", room, event), item);
         Ok(())
+    }
+}
+
+// Transaction Digests
+#[async_trait]
+impl Routing<StoredTransactionDigest> for SocketIoTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredTransactionDigest,
+    ) -> anyhow::Result<()> {
+        self.send("transactions".to_string(),"digest".to_string(), item)
+            .await
     }
 }
 

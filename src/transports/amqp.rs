@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use serde::Serialize;
 
 use crate::handlers::world::*;
+use crate::models::system::*;
 use crate::models::world::*;
 use crate::transports::Routing;
 
@@ -69,6 +70,18 @@ impl AmqpTransport {
             .await?; // second await = broker publisher-confirm ack
 
         Ok(())
+    }
+}
+
+// Transaction Digests
+#[async_trait]
+impl Routing<StoredTransactionDigest> for AmqpTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredTransactionDigest,
+    ) -> anyhow::Result<()> {
+        self.send("transactions.digest".to_string(), item).await
     }
 }
 

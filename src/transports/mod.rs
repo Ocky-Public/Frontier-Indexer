@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use serde::Serialize;
 
 use crate::handlers::world::*;
+use crate::models::system::*;
 use crate::models::world::*;
 
 pub mod amqp;
@@ -32,7 +33,8 @@ mod private {
     pub trait Router: Send + Sync + 'static {}
 
     impl<T> Router for T where
-        T: super::Routing<StoredOwnerCapCreated>
+        T: super::Routing<StoredTransactionDigest>
+            + super::Routing<StoredOwnerCapCreated>
             + super::Routing<OwnerCapAction>
             + super::Routing<StoredOwnerCapTransferred>
             + super::Routing<StoredAssemblyCreated>

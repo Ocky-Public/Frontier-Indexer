@@ -7,6 +7,7 @@ use sui_types::effects::TransactionEffectsAPI;
 use sui_types::transaction::{Command, TransactionDataAPI};
 
 pub mod app;
+pub mod system;
 pub mod emitter;
 pub mod world;
 

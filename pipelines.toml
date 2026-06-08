@@ -3,6 +3,9 @@
 # When the PIPELINES environment variable is set it takes precedence over this file.
 [pipelines]
 
+# System
+transaction_digests = true
+
 # Access
 owner_cap_created = true
 owner_caps = true
