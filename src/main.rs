@@ -20,8 +20,7 @@ use sui_pg_db::{Db, DbArgs};
 
 use indexer::config::*;
 use indexer::handlers::*;
-use indexer::models::system::FuelRegistry;
-use indexer::models::system::TableRegistry;
+use indexer::models::system::*;
 use indexer::pipelines::*;
 use indexer::transports::*;
 use indexer::{AppContext, AppEnv};
@@ -301,6 +300,14 @@ async fn main() -> Result<(), anyhow::Error> {
     let transports = Transports::init(&transport_config)
         .await
         .context("Could not initialize transports")?;
+
+    // Handler for tx digests always runs.
+    indexer
+        .sequential_pipeline(
+            system::TransactionDigestHandler::new(&context, transports.for_pipeline()),
+            sequential.clone(),
+        )
+        .await?;
 
     // Register handlers based on selected packages
     for package in &packages {
