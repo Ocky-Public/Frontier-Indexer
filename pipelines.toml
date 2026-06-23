@@ -75,13 +75,20 @@ fuel_withdrawn = true
 inventories = true
 item_burned = true
 item_deposited = true
+item_deposited_v2 = true
 item_destroyed = true
 items = true
 item_minted = true
 item_withdrawn = true
+item_withdrawn_v2 = true
 
 # Locations
 location_revealed = true
 
 # Status
 status_changed = true
+
+# Rifts
+rifts = true
+rift_location_broadcasted = true
+rift_spawned = true
