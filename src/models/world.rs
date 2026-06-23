@@ -3,6 +3,7 @@ pub mod assemblies;
 pub mod characters;
 pub mod killmails;
 pub mod primitives;
+pub mod rifts;
 
 pub use access::event_owner_cap_created::*;
 pub use access::event_owner_cap_transferred::*;
@@ -80,3 +81,7 @@ pub use primitives::status::event_status_changed::*;
 pub use primitives::status::status::*;
 
 pub use primitives::tenant_item_id::*;
+
+pub use rifts::event_rift_location_broadcasted::*;
+pub use rifts::event_rift_spawned::*;
+pub use rifts::rifts::*;
