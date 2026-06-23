@@ -429,6 +429,8 @@ diesel::table! {
         character_id -> Varchar,
         #[max_length = 20]
         character_item_id -> Varchar,
+        #[max_length = 66]
+        inventory_id -> Nullable<Varchar>,
     }
 }
 
@@ -485,6 +487,8 @@ diesel::table! {
         character_id -> Varchar,
         #[max_length = 20]
         character_item_id -> Varchar,
+        #[max_length = 66]
+        inventory_id -> Nullable<Varchar>,
     }
 }
 
@@ -551,6 +555,40 @@ diesel::table! {
         owner -> Varchar,
         #[max_length = 66]
         owner_old -> Varchar,
+    }
+}
+
+diesel::table! {
+    events_rift_location_broadcasted (event_id, occurred_at) {
+        #[max_length = 100]
+        event_id -> Varchar,
+        occurred_at -> Timestamptz,
+        #[max_length = 66]
+        id -> Varchar,
+        #[max_length = 20]
+        item_id -> Varchar,
+        #[max_length = 66]
+        location_hash -> Varchar,
+        #[max_length = 20]
+        solar_system_id -> Varchar,
+        x -> Text,
+        y -> Text,
+        z -> Text,
+    }
+}
+
+diesel::table! {
+    events_rift_spawned (event_id, occurred_at) {
+        #[max_length = 100]
+        event_id -> Varchar,
+        occurred_at -> Timestamptz,
+        #[max_length = 66]
+        id -> Varchar,
+        #[max_length = 20]
+        item_id -> Varchar,
+        tenant -> Text,
+        #[max_length = 66]
+        location_hash -> Varchar,
     }
 }
 
@@ -861,6 +899,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    rifts (id) {
+        #[max_length = 66]
+        id -> Varchar,
+        #[max_length = 20]
+        item_id -> Varchar,
+        tenant -> Text,
+        #[max_length = 66]
+        location -> Varchar,
+        checkpoint_updated -> Int8,
+    }
+}
+
+diesel::table! {
     storage_units (id) {
         #[max_length = 66]
         id -> Varchar,
@@ -964,6 +1015,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     events_network_node_created,
     events_owner_cap_created,
     events_owner_cap_transferred,
+    events_rift_location_broadcasted,
+    events_rift_spawned,
     events_status_changed,
     events_storage_unit_created,
     events_storage_unit_extension_authorized,
@@ -982,6 +1035,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     killmails,
     network_nodes,
     owner_caps,
+    rifts,
     storage_units,
     system_table_registry,
     turrets,
