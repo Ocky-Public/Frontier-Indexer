@@ -784,3 +784,40 @@ impl Routing<StoredStatusChanged> for AmqpTransport {
         self.send(routing, item).await
     }
 }
+
+// Rifts
+#[async_trait]
+impl Routing<RiftAction> for AmqpTransport {
+    async fn send(&self, _pipeline: &'static str, action: &RiftAction) -> anyhow::Result<()> {
+        match action {
+            RiftAction::Upsert(item) => {
+                let routing = format!("{}.{}.{}", "rift", item.id, "updated");
+                self.send(routing, item).await
+            }
+            RiftAction::Delete(id_str) => {
+                let routing = format!("{}.{}.{}", "rift", id_str, "deleted");
+                self.send(routing, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredRiftLocationBroadcasted> for AmqpTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredRiftLocationBroadcasted,
+    ) -> anyhow::Result<()> {
+        let routing = format!("{}.{}.{}", "rift", item.id, "revealed");
+        self.send(routing, item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredRiftSpawned> for AmqpTransport {
+    async fn send(&self, _pipeline: &'static str, item: &StoredRiftSpawned) -> anyhow::Result<()> {
+        let routing = format!("{}.{}.{}", "rift", item.id, "spawned");
+        self.send(routing, item).await
+    }
+}

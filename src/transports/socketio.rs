@@ -36,7 +36,7 @@ impl Routing<StoredTransactionDigest> for SocketIoTransport {
         _pipeline: &'static str,
         item: &StoredTransactionDigest,
     ) -> anyhow::Result<()> {
-        self.send("transactions".to_string(),"digest".to_string(), item)
+        self.send("transactions".to_string(), "digest".to_string(), item)
             .await
     }
 }
@@ -713,6 +713,44 @@ impl Routing<StoredLocationRevealed> for SocketIoTransport {
 #[async_trait]
 impl Routing<StoredStatusChanged> for SocketIoTransport {
     async fn send(&self, pipeline: &'static str, item: &StoredStatusChanged) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+// Rifts
+#[async_trait]
+impl Routing<RiftAction> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, action: &RiftAction) -> anyhow::Result<()> {
+        match action {
+            RiftAction::Upsert(item) => {
+                let room = item.id.clone();
+                let event = format!("{}:{}", pipeline, "updated");
+                self.send(room, event, item).await
+            }
+            RiftAction::Delete(id_str) => {
+                let event = format!("{}:{}", pipeline, "deleted");
+                self.send(id_str.clone(), event, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredRiftLocationBroadcasted> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredRiftLocationBroadcasted,
+    ) -> anyhow::Result<()> {
+        let room = item.id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredRiftSpawned> for SocketIoTransport {
+    async fn send(&self, pipeline: &'static str, item: &StoredRiftSpawned) -> anyhow::Result<()> {
         let room = item.id.clone();
         self.send(room, pipeline.to_string(), item).await
     }

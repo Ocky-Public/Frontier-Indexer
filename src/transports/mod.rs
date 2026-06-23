@@ -86,6 +86,9 @@ mod private {
             + super::Routing<StoredItemWithdrawn>
             + super::Routing<StoredLocationRevealed>
             + super::Routing<StoredStatusChanged>
+            + super::Routing<RiftAction>
+            + super::Routing<StoredRiftLocationBroadcasted>
+            + super::Routing<StoredRiftSpawned>
             /* Add application specific routing requirements for transports here */
     {
     }
