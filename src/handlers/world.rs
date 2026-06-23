@@ -3,6 +3,7 @@ pub mod assemblies;
 pub mod characters;
 pub mod killmails;
 pub mod primitives;
+pub mod rifts;
 
 pub use access::owner_cap_created_handler::*;
 pub use access::owner_cap_handler::*;
@@ -61,11 +62,17 @@ pub use primitives::fuel::fuel_withdrawn_handler::*;
 pub use primitives::inventories::inventory_handler::*;
 pub use primitives::inventories::item_burned_handler::*;
 pub use primitives::inventories::item_deposited_handler::*;
+pub use primitives::inventories::item_deposited_v2_handler::*;
 pub use primitives::inventories::item_destroyed_handler::*;
 pub use primitives::inventories::item_handler::*;
 pub use primitives::inventories::item_minted_handler::*;
 pub use primitives::inventories::item_withdrawn_handler::*;
+pub use primitives::inventories::item_withdrawn_v2_handler::*;
 
 pub use primitives::locations::location_revealed_handler::*;
 
 pub use primitives::status::status_changed_handler::*;
+
+pub use rifts::rift_handler::*;
+pub use rifts::rift_location_broadcasted_handler::*;
+pub use rifts::rift_spawned_handler::*;

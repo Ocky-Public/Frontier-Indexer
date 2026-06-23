@@ -21,6 +21,18 @@ pub struct MoveItemDeposited {
     pub quantity: u32,
 }
 
+#[derive(Deserialize)]
+pub struct MoveItemDepositedV2 {
+    pub assembly_id: Address,
+    pub assembly_key: MoveTenantItemId,
+    pub inventory_key: Address,
+    pub character_id: Address,
+    pub character_key: MoveTenantItemId,
+    pub item_id: u64,
+    pub type_id: u64,
+    pub quantity: u32,
+}
+
 #[derive(Insertable, Serialize, Debug, Clone, FieldCount)]
 #[diesel(table_name = events_item_deposited)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -34,6 +46,7 @@ pub struct StoredItemDeposited {
     pub assembly_item_id: String,
     pub character_id: String,
     pub character_item_id: String,
+    pub inventory_id: Option<String>,
 }
 
 impl StoredItemDeposited {
@@ -54,6 +67,28 @@ impl StoredItemDeposited {
             assembly_item_id: move_event.assembly_key.item_id.to_string(),
             character_id: move_event.character_id.to_hex(),
             character_item_id: move_event.character_key.item_id.to_string(),
+            inventory_id: Option::None,
+        }
+    }
+
+    pub fn from_event_v2(event: &Event, meta: &EventMeta) -> Self {
+        let move_event: MoveItemDepositedV2 = bcs::from_bytes(&event.contents)
+            .expect("Failed to deserialize Item Deposited V2 event");
+
+        let occurred_at = DateTime::from_timestamp_millis(meta.checkpoint_timestamp_ms())
+            .expect("Failed to parse checkpoint timestamp into DateTime");
+
+        Self {
+            event_id: meta.event_digest(),
+            occurred_at,
+            item_id: move_event.item_id.to_string(),
+            type_id: move_event.type_id as i64,
+            quantity: move_event.quantity as i64,
+            assembly_id: move_event.assembly_id.to_hex(),
+            assembly_item_id: move_event.assembly_key.item_id.to_string(),
+            character_id: move_event.character_id.to_hex(),
+            character_item_id: move_event.character_key.item_id.to_string(),
+            inventory_id: Option::Some(move_event.inventory_key.to_string()),
         }
     }
 }

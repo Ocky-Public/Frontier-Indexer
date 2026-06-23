@@ -746,3 +746,40 @@ impl Routing<StoredStatusChanged> for RedisTransport {
         self.send(channel, item).await
     }
 }
+
+// Rifts
+#[async_trait]
+impl Routing<RiftAction> for RedisTransport {
+    async fn send(&self, _pipeline: &'static str, action: &RiftAction) -> anyhow::Result<()> {
+        match action {
+            RiftAction::Upsert(item) => {
+                let channel = format!("{}:{}:{}", "rift", item.id, "updated");
+                self.send(channel, item).await
+            }
+            RiftAction::Delete(id_str) => {
+                let channel = format!("{}:{}:{}", "rift", id_str, "deleted");
+                self.send(channel, id_str).await
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Routing<StoredRiftLocationBroadcasted> for RedisTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredRiftLocationBroadcasted,
+    ) -> anyhow::Result<()> {
+        let channel = format!("{}:{}:{}", "rift", item.id, "revealed");
+        self.send(channel, item).await
+    }
+}
+
+#[async_trait]
+impl Routing<StoredRiftSpawned> for RedisTransport {
+    async fn send(&self, _pipeline: &'static str, item: &StoredRiftSpawned) -> anyhow::Result<()> {
+        let channel = format!("{}:{}:{}", "rift", item.id, "spawned");
+        self.send(channel, item).await
+    }
+}

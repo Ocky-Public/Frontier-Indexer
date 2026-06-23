@@ -52,6 +52,7 @@ pub const WORLD_MODULES: &[&str] = &[
     "assets",
     "access",
     "assembly",
+    "EVE",
     "extension_freeze",
     "gate",
     "storage_unit",
@@ -69,6 +70,7 @@ pub const WORLD_MODULES: &[&str] = &[
     "status",
     "killmail_registry",
     "object_registry",
+    "rift",
     "world",
 ];
 

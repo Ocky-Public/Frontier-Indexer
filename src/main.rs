@@ -386,16 +386,23 @@ async fn main() -> Result<(), anyhow::Error> {
                 indexer.sequential_pipeline(world::InventoryHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemBurnedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemDepositedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemDepositedV2Handler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemDestroyedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemMintedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::ItemWithdrawnHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::ItemWithdrawnV2Handler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
 
                 // Locations
                 indexer.sequential_pipeline(world::LocationRevealedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
 
                 // Status
                 indexer.sequential_pipeline(world::StatusChangedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
+
+                // Rifts
+                indexer.sequential_pipeline(world::RiftHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::RiftLocationBroadcastedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::RiftSpawnedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
             }
         }
     }
