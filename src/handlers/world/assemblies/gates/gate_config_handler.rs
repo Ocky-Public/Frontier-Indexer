@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde::Serialize;
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -11,15 +11,15 @@ use diesel::upsert::excluded;
 use diesel_async::RunQueryDsl;
 
 use sui_pg_db::FieldCount;
+use sui_types::TypeTag;
 use sui_types::effects::{IDOperation, TransactionEffectsAPI};
 use sui_types::object::Object;
 use sui_types::object::Owner;
 use sui_types::storage::ObjectKey;
-use sui_types::TypeTag;
 
 use move_core_types::account_address::AccountAddress;
-use sui_indexer_alt_framework::pipeline::sequential::Handler;
 use sui_indexer_alt_framework::pipeline::Processor;
+use sui_indexer_alt_framework::pipeline::sequential::Handler;
 use sui_indexer_alt_framework::postgres::{Connection, Db};
 use sui_indexer_alt_framework::types::full_checkpoint_content::Checkpoint;
 
@@ -134,6 +134,7 @@ impl Processor for GateConfigHandler {
                 continue;
             }
 
+            // First pass to catch all tables and deletions.
             for change in &tx.effects.object_changes() {
                 let object_id = change.id;
 
@@ -182,6 +183,28 @@ impl Processor for GateConfigHandler {
                             table_updates.insert(table_id, Arc::new(table_record.clone()));
                             results.push(GateConfigAction::Register(table_record));
                         }
+                    }
+                    IDOperation::Deleted => {
+                        results.push(GateConfigAction::Delete(object_id.to_string()));
+                    }
+                }
+            }
+
+            // Second pass to catch all table entries.
+            for change in &tx.effects.object_changes() {
+                let object_id = change.id;
+
+                match change.id_operation {
+                    IDOperation::Created | IDOperation::None => {
+                        let Some(version) = change.output_version else {
+                            continue;
+                        };
+
+                        let key = ObjectKey(object_id, version);
+
+                        let Some(obj) = checkpoint.object_set.get(&key) else {
+                            continue;
+                        };
 
                         if let Some(table) = self.is_gate_config_entry(obj, &table_updates) {
                             let config = StoredGateConfig::from_object(
@@ -193,9 +216,7 @@ impl Processor for GateConfigHandler {
                             results.push(GateConfigAction::Upsert(config));
                         }
                     }
-                    IDOperation::Deleted => {
-                        results.push(GateConfigAction::Delete(object_id.to_string()));
-                    }
+                    IDOperation::Deleted => {} // Already handled in first pass.
                 }
             }
         }
