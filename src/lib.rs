@@ -41,9 +41,8 @@ const MAINNET_WORLD_PACKAGES: &[&str] = &[];
 const TESTNET_PACKAGES: &[&str] = &[];
 
 const TESTNET_WORLD_PACKAGES: &[&str] = &[
-    "0x2a66a89b5a735738ffa4423ac024d23571326163f324f9051557617319e59d60", // Assets v1
-    "0x28b497559d65ab320d9da4613bf2498d5946b2c0ae3597ccfda3072ce127448c", // World v1
-    "0xd2fd1224f881e7a705dbc211888af11655c315f2ee0f03fe680fc3176e6e4780", // World v2
+    "0xac361aa5ceb726bd974f885c9dea9e55dc9bc98fa1f5731c5965a810707bf0b8", // Assets v1
+    "0x8b8a46ed766fa1358ce7c5c51f6a164b13d627a63e45343f69ed0ba0446c1aa1", // World v1
 ];
 
 pub const APP_MODULES: &[&str] = &[];
