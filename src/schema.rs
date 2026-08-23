@@ -578,6 +578,23 @@ diesel::table! {
 }
 
 diesel::table! {
+    events_rift_mining_started (event_id, occurred_at) {
+        #[max_length = 100]
+        event_id -> Varchar,
+        occurred_at -> Timestamptz,
+        #[max_length = 20]
+        item_id -> Varchar,
+        #[max_length = 66]
+        character_id -> Varchar,
+        #[max_length = 20]
+        solar_system_id -> Varchar,
+        x -> Text,
+        y -> Text,
+        z -> Text,
+    }
+}
+
+diesel::table! {
     events_rift_spawned (event_id, occurred_at) {
         #[max_length = 100]
         event_id -> Varchar,
@@ -1016,6 +1033,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     events_owner_cap_created,
     events_owner_cap_transferred,
     events_rift_location_broadcasted,
+    events_rift_mining_started,
     events_rift_spawned,
     events_status_changed,
     events_storage_unit_created,
