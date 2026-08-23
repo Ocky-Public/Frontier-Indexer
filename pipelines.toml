@@ -91,4 +91,5 @@ status_changed = true
 # Rifts
 rifts = true
 rift_location_broadcasted = true
+rift_mining_started = true
 rift_spawned = true
