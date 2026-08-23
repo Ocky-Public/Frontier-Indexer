@@ -43,6 +43,7 @@ const TESTNET_PACKAGES: &[&str] = &[];
 const TESTNET_WORLD_PACKAGES: &[&str] = &[
     "0xac361aa5ceb726bd974f885c9dea9e55dc9bc98fa1f5731c5965a810707bf0b8", // Assets v1
     "0x8b8a46ed766fa1358ce7c5c51f6a164b13d627a63e45343f69ed0ba0446c1aa1", // World v1
+    "0x9194d2b9d8b692e418980a7452c23631a55e75e57db67de48fff4952de2d86fc", // World v2
 ];
 
 pub const APP_MODULES: &[&str] = &[];
