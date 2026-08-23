@@ -88,6 +88,7 @@ mod private {
             + super::Routing<StoredStatusChanged>
             + super::Routing<RiftAction>
             + super::Routing<StoredRiftLocationBroadcasted>
+            + super::Routing<StoredRiftMiningStarted>
             + super::Routing<StoredRiftSpawned>
             /* Add application specific routing requirements for transports here */
     {

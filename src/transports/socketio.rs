@@ -749,6 +749,20 @@ impl Routing<StoredRiftLocationBroadcasted> for SocketIoTransport {
 }
 
 #[async_trait]
+impl Routing<StoredRiftMiningStarted> for SocketIoTransport {
+    async fn send(
+        &self,
+        pipeline: &'static str,
+        item: &StoredRiftMiningStarted,
+    ) -> anyhow::Result<()> {
+        // Note: This messsage broadcasts to the in-game id of the rift since they didnt include the on-chain id.
+        // Should get fixed in world v1 once available.
+        let room = item.item_id.clone();
+        self.send(room, pipeline.to_string(), item).await
+    }
+}
+
+#[async_trait]
 impl Routing<StoredRiftSpawned> for SocketIoTransport {
     async fn send(&self, pipeline: &'static str, item: &StoredRiftSpawned) -> anyhow::Result<()> {
         let room = item.id.clone();
