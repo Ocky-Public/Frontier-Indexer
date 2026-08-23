@@ -815,6 +815,20 @@ impl Routing<StoredRiftLocationBroadcasted> for AmqpTransport {
 }
 
 #[async_trait]
+impl Routing<StoredRiftMiningStarted> for AmqpTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredRiftMiningStarted,
+    ) -> anyhow::Result<()> {
+        // Note: This messsage broadcasts to the in-game id of the rift since they didnt include the on-chain id.
+        // Should get fixed in world v1 once available.
+        let routing = format!("{}.{}.{}", "rift", item.item_id, "mined");
+        self.send(routing, item).await
+    }
+}
+
+#[async_trait]
 impl Routing<StoredRiftSpawned> for AmqpTransport {
     async fn send(&self, _pipeline: &'static str, item: &StoredRiftSpawned) -> anyhow::Result<()> {
         let routing = format!("{}.{}.{}", "rift", item.id, "spawned");

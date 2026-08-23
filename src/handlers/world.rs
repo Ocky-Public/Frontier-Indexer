@@ -75,4 +75,5 @@ pub use primitives::status::status_changed_handler::*;
 
 pub use rifts::rift_handler::*;
 pub use rifts::rift_location_broadcasted_handler::*;
+pub use rifts::rift_mining_started_handler::*;
 pub use rifts::rift_spawned_handler::*;

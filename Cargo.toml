@@ -1,6 +1,6 @@
 [package]
 name = "indexer"
-version = "0.3.5"
+version = "0.3.8"
 edition = "2024"
 
 [dependencies]
@@ -43,18 +43,18 @@ axum = { version = "0.8", default-features = false, features = [
 ] }
 
 # References forked sui with custom framework
-sui-pg-db = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
-sui-types = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
-move-core-types = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
-telemetry-subscribers = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
-sui-indexer-alt-metrics = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
-sui-indexer-alt-framework = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
-sui-indexer-alt-framework-store-traits = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
-sui-transaction-builder = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+sui-pg-db = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
+sui-types = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
+move-core-types = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
+telemetry-subscribers = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
+sui-indexer-alt-metrics = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
+sui-indexer-alt-framework = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
+sui-indexer-alt-framework-store-traits = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
+sui-transaction-builder = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
 
-sui-sdk-types = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "5b41bc701525f1b94f1fe63008d4841bc6fb1065", features = [ "hash", "serde" ] }
-sui-crypto = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "5b41bc701525f1b94f1fe63008d4841bc6fb1065", features = [ "ed25519", "secp256r1", "secp256k1", "passkey", "zklogin" ] }
-sui-rpc = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "5b41bc701525f1b94f1fe63008d4841bc6fb1065", features = [ "unstable" ] }
+sui-sdk-types = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "c406a6ca42f4cc7b1409e133421eec123b7875d6", features = [ "hash", "serde" ] }
+sui-crypto = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "c406a6ca42f4cc7b1409e133421eec123b7875d6", features = [ "ed25519", "secp256r1", "secp256k1", "passkey", "zklogin" ] }
+sui-rpc = { git = "https://github.com/MystenLabs/sui-rust-sdk.git", rev = "c406a6ca42f4cc7b1409e133421eec123b7875d6", features = [ "unstable" ] }
 
 # Database
 chrono = { version = "0.4.44", features = ["clock", "serde"] }
@@ -77,7 +77,7 @@ insta = { version = "1.43.1", features = ["json"] }
 sqlx = { version = "0.8.3", features = ["runtime-tokio", "postgres", "chrono", "bigdecimal"] }
 fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto", rev = "4db0e90c732bbf7420ca20de808b698883148d9c" }
 
-sui-storage = { git = "https://github.com/Ocky-Public/sui.git", branch = "main-indexer" }
+sui-storage = { git = "https://github.com/Algo-Net/sui.git", branch = "testnet-indexer-0.3.8" }
 
 [[bin]]
 name = "indexer"

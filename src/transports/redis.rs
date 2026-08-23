@@ -777,6 +777,20 @@ impl Routing<StoredRiftLocationBroadcasted> for RedisTransport {
 }
 
 #[async_trait]
+impl Routing<StoredRiftMiningStarted> for RedisTransport {
+    async fn send(
+        &self,
+        _pipeline: &'static str,
+        item: &StoredRiftMiningStarted,
+    ) -> anyhow::Result<()> {
+        // Note: This messsage broadcasts to the in-game id of the rift since they didnt include the on-chain id.
+        // Should get fixed in world v1 once available.
+        let channel = format!("{}:{}:{}", "rift", item.item_id, "mined");
+        self.send(channel, item).await
+    }
+}
+
+#[async_trait]
 impl Routing<StoredRiftSpawned> for RedisTransport {
     async fn send(&self, _pipeline: &'static str, item: &StoredRiftSpawned) -> anyhow::Result<()> {
         let channel = format!("{}:{}:{}", "rift", item.id, "spawned");

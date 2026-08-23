@@ -402,6 +402,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // Rifts
                 indexer.sequential_pipeline(world::RiftHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::RiftLocationBroadcastedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
+                indexer.sequential_pipeline(world::RiftMiningStartedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
                 indexer.sequential_pipeline(world::RiftSpawnedHandler::new(&context, transports.for_pipeline()), sequential.clone()).await?;
             }
         }

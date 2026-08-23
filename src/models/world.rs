@@ -83,5 +83,6 @@ pub use primitives::status::status::*;
 pub use primitives::tenant_item_id::*;
 
 pub use rifts::event_rift_location_broadcasted::*;
+pub use rifts::event_rift_mining_started::*;
 pub use rifts::event_rift_spawned::*;
 pub use rifts::rifts::*;
